@@ -76,21 +76,26 @@ Topic: {{{topic}}}
 
 // SHARED SVG GENERATION LOGIC
 const generateSvg = async (description: string): Promise<string> => {
-    const designerPrompt = `You are a world-class illustrator. Your task is to generate a high-quality, professional, and visually compelling SVG based on the provided description.
+    const designerPrompt = `You are an expert educational illustrator and graphic designer. Your task is to create a professional, high-quality SVG that visually explains a concept. The style must be serious, clear, and suitable for an educational setting.
 
-**Style requirements:**
-- **Clarity and Readability:** The diagram must be easy to read and understand. Use clear fonts and a logical layout.
+**Core Task:**
+- **Conceptual Illustration:** Do not just draw a literal picture. Create a visual metaphor or a diagram-like illustration that explains the core idea of the description. Use symbols, icons, and a clear layout to convey meaning.
+- **Educational Focus:** The final SVG must help someone understand a complex topic. It should be more like a diagram or an infographic scene than a simple drawing.
+- **Professional & Serious Tone:** Use a modern, clean, flat-iconography style. AVOID cartoonish, childish, or overly simplistic styles. The visual should be something you'd see in a university textbook or a professional presentation.
+
+**Technical SVG Requirements:**
 - **Self-Contained:** The SVG must be self-contained. No external scripts or assets.
-- **Aesthetics:** Use a modern, clean, flat-iconography style. The illustration must be detailed, serious, and professional, suitable for an educational context. AVOID cartoonish or overly simplistic styles.
-- **Responsive:** The SVG must be responsive and scale correctly by using a 'viewBox' attribute.
-- **Background:** The background must be transparent.
-- **Colors:** Use a harmonious and professional color palette.
+- **Responsive:** Must use a 'viewBox' attribute to scale correctly.
+- **Transparent Background:** The background must be transparent.
+- **Harmonious Colors:** Use a professional and limited color palette that enhances clarity.
+- **Readable Text:** Any text included must be clear, legible, and integrated into the design.
 
-**Output format:**
-- Only output the raw SVG code. Start with '<svg ...>' and end with '</svg>'.
-- Do NOT include any other text, explanations, or markdown code fences like \`\`\`.
+**Output Format:**
+- **SVG Code ONLY:** Your entire response must be ONLY the raw SVG code.
+- Start with \`<svg ...>\` and end with \`</svg>\`.
+- Do NOT include any other text, explanations, or markdown fences like \`\`\`.
 
-**Task:** Create an SVG for the following description:
+**Task:** Create a conceptual, educational SVG for the following scene description:
 ${description}`;
 
     const svgGenerationResponse = await ai.generate({ prompt: designerPrompt, model: 'googleai/gemini-1.5-pro-latest' });
