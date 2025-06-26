@@ -45,13 +45,13 @@ const simplifyTopicPrompt = ai.definePrompt({
   name: 'simplifyTopicPrompt',
   input: {schema: SimplifyTopicInputSchema},
   output: {schema: SimplifyTopicPromptOutputSchema},
-  prompt: `You are an expert educator and animator specializing in simplifying complex topics for students. Your responses must be in Turkish.
+  prompt: `You are an expert educator and animator specializing in simplifying complex topics for students. Your responses must be in Turkish. The overall tone must be serious, professional, and educational.
 
 Your task is to take a topic and break it down into:
 1.  A simplified summary suitable for students.
 2.  A multi-scene animation storyboard to explain the topic visually.
 
-The animation storyboard must be very clear, logically structured, and directly faithful to the core concepts of the topic. Each scene should build upon the previous one to tell a coherent and easy-to-follow story for a student.
+The animation storyboard must be very clear, logically structured, and directly faithful to the core concepts of the topic. The goal is to create an educational tool, not entertainment. Each scene should build upon the previous one to tell a coherent and easy-to-follow story for a student.
 
 For each scene, provide:
 -   **scene:** A short, descriptive title (in Turkish).
@@ -77,7 +77,9 @@ const simplifyTopicFlow = ai.defineFlow(
     const scenarioWithAnimations = await Promise.all(
         promptOutput.animationScenario.map(async (scene) => {
           try {
-            const designerPrompt = `You are a world-class SVG animator and illustrator. Your task is to generate a high-quality, professional, and visually compelling animated SVG.
+            const designerPrompt = `You are a world-class SVG animator and illustrator. Your task is to generate a high-quality, professional, and visually compelling animated SVG suitable for an educational context.
+
+**Tone:** The style must be serious, informative, and professional. Avoid cartoonish, whimsical, or overly playful elements. The final output should look like a premium educational animation.
 
 **Style requirements:**
 - **Animation:** The animation must be a smooth, continuous, and seamless loop.
