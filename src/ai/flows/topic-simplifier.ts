@@ -79,25 +79,35 @@ Topic: {{{topic}}}
 
 // SHARED SVG GENERATION LOGIC
 const generateSvg = async (description: string): Promise<string> => {
-    const designerPrompt = `You are an expert in creating visual aids and educational graphics. Your task is to design a high-quality SVG illustration that is not just a picture, but an **educational diagram** that clearly explains the given scene.
+    const designerPrompt = `You are an expert educator and visual designer, specializing in creating crystal-clear educational graphics. Your primary goal is to **teach a concept visually**. Your output must be a high-quality SVG that functions as a mini-lesson.
 
-**Core Mission: Explain, Don't Just Decorate.**
-- **Clarity is King:** The visual must be instantly understandable and teach the core concept of the scene.
-- **Use Diagrammatic Elements:** Incorporate labels, arrows, simplified icons, and flow-chart-like elements to show processes, relationships, and key information. The visual should feel like a slide from a high-quality educational video.
-- **Literal and Recognizable:** All elements must be concrete and recognizable. A sun should look like a sun, a cell like a cell. Avoid overly abstract or artistic interpretations. The style should be clean, professional, and modern.
-- **Example:** If the scene is "Sunlight gives energy to the plant", don't just draw a sun and a plant. Draw the sun with arrows pointing towards the plant, perhaps with a label like "Energy" on the arrows. The plant could have a subtle glow to indicate it's receiving the energy.
+**Your Guiding Principle: Clarity Over Artistry. Teach, don't just illustrate.**
+
+**Process:**
+1.  **Analyze the Scene:** Read the provided scene description and identify the single most important concept or relationship being explained.
+2.  **Design a Visual Explanation:** Create a design that explains this concept. You **must** use diagrammatic elements like:
+    *   **Labels:** Clear, concise text to identify parts.
+    *   **Arrows:** To show flow, cause-and-effect, or relationships.
+    *   **Simplified Icons:** Use universally recognizable icons for objects and actors.
+    *   **Flowchart/Mind-Map Elements:** Use boxes, circles, and lines to structure information logically.
+3.  **Style:**
+    *   **Clean & Professional:** Use a modern, flat design style. Avoid excessive gradients, shadows, or complex textures.
+    *   **Literal & Recognizable:** Every visual element must be immediately identifiable. A person must look like a person, a building like a building. **No abstract or symbolic art.**
+    *   **Purposeful Color:** Use a limited, harmonious color palette. Use color to highlight key information, not just for decoration.
+    *   **Transparent Background.**
+
+**Example Task:**
+*   **Scene Description:** "Severance pay is given to an employee when they leave a company."
+*   **Your Output (SVG):** An SVG showing a person in business attire handing a bag with a money symbol ($) to another person. An arrow points from the first person to the second, labeled "Severance Pay". The background might have a simple office building icon.
 
 **Technical SVG Requirements:**
-- **Self-Contained:** The SVG must be self-contained. No external scripts or assets.
-- **Responsive:** Must use a 'viewBox' attribute to scale correctly.
-- **Transparent Background:** The background must be transparent.
-- **Harmonious Colors:** Use a professional and limited color palette that fits an educational theme. Use colors purposefully to highlight key information.
-- **Readable Text:** Any text (labels) must be clear, well-integrated, and use a standard sans-serif font.
+- **Self-Contained & Valid SVG:** No external scripts or assets. Must be well-formed XML.
+- **Responsive:** Must include a \`viewBox\` attribute.
+- **Readable Text:** Any text must be embedded in the SVG, use a standard sans-serif font, and be easily readable.
 
-**Output Format:**
-- **SVG Code ONLY:** Your response must be ONLY the raw SVG code, starting with \`<svg ...>\` and ending with \`</svg>\`. Do NOT include any other text, explanations, or markdown fences like \`\`\`.
+**Critical Instruction: Your final output must be ONLY the raw SVG code, starting with \`<svg ...>\` and ending with \`</svg>\`. Do NOT include any other text, explanations, or markdown like \`\`\`.**
 
-**Task:** Create a clear, educational, and diagrammatic SVG illustration for the following scene description:
+**Now, apply this thinking to the following scene:**
 ${description}`;
 
     const svgGenerationResponse = await ai.generate({ prompt: designerPrompt, model: 'googleai/gemini-1.5-pro-latest' });
