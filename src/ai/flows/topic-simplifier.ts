@@ -53,7 +53,11 @@ const simplifyTopicPrompt = ai.definePrompt({
   output: {schema: SimplifyTopicPromptOutputSchema},
   prompt: `You are an expert educator and animator specializing in simplifying complex topics for students. Your responses for summary and description must be in Turkish.
 
-Your task is to take a topic and break it down into a simplified summary and a multi-scene animation script. For each scene in the animation, you will provide a title (can be in English), a description of the action in Turkish, and a specific, detailed prompt for an AI model to generate a corresponding **animated SVG** (this prompt must be in English).
+Your task is to take a topic and break it down into a simplified summary and a multi-scene animation script. 
+
+The animation storyboard must be very clear, logically structured, and directly faithful to the core concepts of the topic. Each scene should build upon the previous one to tell a coherent and easy-to-follow story for a student.
+
+For each scene in the animation, you will provide a title (can be in English), a description of the action in Turkish, and a specific, detailed prompt for an AI model to generate a corresponding **animated SVG** (this prompt must be in English).
 
 The visual style for the animated SVGs should be a professional, visually rich, and detailed educational illustration with a smooth, looping animation. It should be engaging and clear, but not childish or overly simplistic. The drawing must accurately and literally represent the objects and concepts in the scene description.
 

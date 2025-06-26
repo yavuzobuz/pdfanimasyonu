@@ -22,7 +22,7 @@ export default function Home() {
             </p>
           </div>
 
-          <Tabs defaultValue="topic" className="w-full max-w-3xl mx-auto">
+          <Tabs defaultValue="topic" className="w-full max-w-5xl mx-auto">
             <TabsList className="grid w-full grid-cols-2 h-12">
               <TabsTrigger value="topic" className="h-full text-base gap-2">
                 <BookOpen className="w-5 h-5" />

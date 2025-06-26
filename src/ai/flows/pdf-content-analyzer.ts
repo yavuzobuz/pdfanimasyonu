@@ -61,6 +61,8 @@ const pdfContentAnalyzerPrompt = ai.definePrompt({
   Analyze the content of the following PDF document. Your task is to create:
   1.  A simplified summary of the key concepts, in Turkish.
   2.  A multi-scene animation storyboard to explain these concepts visually.
+
+  The animation storyboard must be very clear, logically structured, and directly faithful to the key concepts extracted from the PDF. Each scene should build upon the previous one to tell a coherent and easy-to-follow story for a student.
   
   For each scene in the storyboard, provide a title (can be in English), a detailed description of the visuals and action in Turkish, and a specific, detailed prompt for an AI model to generate a corresponding **animated SVG** (this prompt must be in English).
   

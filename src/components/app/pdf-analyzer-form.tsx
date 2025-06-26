@@ -127,49 +127,29 @@ export function PdfAnalyzerForm() {
         {result && (
             <div className="mt-8 space-y-6">
               <Card>
-                  <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                      <FileText />
-                      Basitleştirilmiş Özet
-                      </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                      <p className="text-sm text-foreground/80">{result.summary}</p>
-                  </CardContent>
-              </Card>
-
-              <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <PlayCircle />
-                    Animasyon Senaryosu
+                    Animasyonlu Açıklama
                   </CardTitle>
-                  <CardDescription>
-                      PDF'inize dayalı sahne sahne storyboard aşağıdadır.
-                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Carousel className="w-full">
+                  <Carousel className="w-full" opts={{ loop: true }}>
                     <CarouselContent>
                       {result.animationScenario.map((scene, index) => (
                         <CarouselItem key={index}>
                           <div className="p-1">
-                          <Card className="bg-card/50">
-                              <CardContent className="flex flex-col items-center justify-center p-4 gap-4">
-                                <div className="w-full aspect-video relative rounded-lg overflow-hidden bg-background shadow-inner">
-                                  <img
-                                    src={scene.imageDataUri}
-                                    alt={scene.scene}
-                                    className="w-full h-full object-contain"
-                                    data-ai-hint="animation scene"
-                                  />
-                                </div>
-                                <div className="w-full space-y-2 text-center pt-2">
-                                  <h3 className="font-bold text-xl">{scene.scene}</h3>
-                                  <p className="text-muted-foreground">{scene.description}</p>
-                                </div>
-                              </CardContent>
-                            </Card>
+                            <div className="w-full h-[480px] relative rounded-lg overflow-hidden bg-background shadow-inner">
+                              <img
+                                src={scene.imageDataUri}
+                                alt={scene.scene}
+                                className="w-full h-full object-contain"
+                                data-ai-hint="animation scene"
+                              />
+                            </div>
+                            <div className="w-full text-center pt-4">
+                              <h3 className="font-bold text-xl">{scene.scene}</h3>
+                            </div>
                           </div>
                         </CarouselItem>
                       ))}
@@ -177,6 +157,14 @@ export function PdfAnalyzerForm() {
                     <CarouselPrevious className="hidden sm:flex" />
                     <CarouselNext className="hidden sm:flex" />
                   </Carousel>
+                  
+                  <div className="mt-6 pt-6 border-t">
+                    <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                      <FileText />
+                      Konu Açıklaması
+                    </h3>
+                    <p className="text-sm text-muted-foreground">{result.summary}</p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
