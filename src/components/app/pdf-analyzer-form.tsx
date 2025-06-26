@@ -2,7 +2,7 @@
 
 import { useState, type ChangeEvent } from 'react';
 import { analyzePdfContentAsAnimation, analyzePdfContentAsDiagram, type AnalyzePdfContentAnimationOutput, type AnalyzePdfContentDiagramOutput } from '@/ai/flows/pdf-content-analyzer';
-import { generateIllustrativeImage, type GenerateImageOutput } from '@/ai/flows/image-generator';
+import { generateSceneImages, type GenerateSceneImagesOutput } from '@/ai/flows/image-generator';
 import { FileUp, Loader2, Sparkles, UploadCloud, X, FileText, Network, Film, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -24,7 +24,7 @@ export function PdfAnalyzerForm() {
   const [diagramResult, setDiagramResult] = useState<AnalyzePdfContentDiagramOutput | null>(null);
 
   const [imageLoading, setImageLoading] = useState(false);
-  const [imageResult, setImageResult] = useState<GenerateImageOutput | null>(null);
+  const [imageResults, setImageResults] = useState<GenerateSceneImagesOutput | null>(null);
   const [imageStyle, setImageStyle] = useState('Fotogerçekçi');
   const imageStyles = ['Fotogerçekçi', 'Dijital Sanat', 'Sulu Boya', 'Çizgi Roman', 'Düşük Poli'];
 
@@ -54,7 +54,7 @@ export function PdfAnalyzerForm() {
     setFileDataUri(null);
     setResult(null);
     setDiagramResult(null);
-    setImageResult(null);
+    setImageResults(null);
   };
   
   const handleSubmit = async () => {
@@ -69,7 +69,7 @@ export function PdfAnalyzerForm() {
     setLoading(true);
     setResult(null);
     setDiagramResult(null);
-    setImageResult(null);
+    setImageResults(null);
     try {
       const res = await analyzePdfContentAsAnimation({ pdfDataUri: fileDataUri });
       setResult(res);
@@ -105,18 +105,19 @@ export function PdfAnalyzerForm() {
   };
 
   const handleGenerateImage = async () => {
-    if (!result?.summary) return;
+    if (!result?.scenes?.length) return;
     setImageLoading(true);
-    setImageResult(null);
+    setImageResults(null);
     try {
-      const res = await generateIllustrativeImage({ topic: result.summary, style: imageStyle });
-      setImageResult(res);
+      const sceneDescriptions = result.scenes.map(s => s.description);
+      const res = await generateSceneImages({ scenes: sceneDescriptions, style: imageStyle });
+      setImageResults(res);
     } catch (error) {
       console.error(error);
       toast({
         variant: 'destructive',
         title: 'An error occurred.',
-        description: 'Failed to generate the image. Please try again.',
+        description: 'Failed to generate the images. Please try again.',
       });
     } finally {
       setImageLoading(false);
@@ -236,10 +237,10 @@ export function PdfAnalyzerForm() {
                     )}
                   </div>
                   <div className="pt-6 border-t">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><ImageIcon /> Kavramsal Görsel</h3>
-                    {!imageResult && !imageLoading && (
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><ImageIcon /> Sahne Görselleri</h3>
+                    {!imageResults && !imageLoading && (
                         <div className="flex flex-col items-center text-center gap-4 p-4 border-2 border-dashed rounded-lg">
-                            <p className="text-muted-foreground">PDF özetini temsil eden kavramsal bir görsel oluşturun. Lütfen bir tarz seçin:</p>
+                            <p className="text-muted-foreground">Animasyon sahnelerini temel alan görseller oluşturun. Lütfen bir tarz seçin:</p>
                             <RadioGroup defaultValue="Fotogerçekçi" value={imageStyle} onValueChange={setImageStyle} className="flex flex-wrap justify-center gap-x-6 gap-y-2 my-2">
                               {imageStyles.map((style) => (
                                 <div key={style} className="flex items-center space-x-2">
@@ -249,20 +250,31 @@ export function PdfAnalyzerForm() {
                               ))}
                             </RadioGroup>
                             <Button onClick={handleGenerateImage} disabled={imageLoading} className="mt-2">
-                                <Sparkles className="mr-2 h-4 w-4" /> Görsel Oluştur
+                                <Sparkles className="mr-2 h-4 w-4" /> Görselleri Oluştur
                             </Button>
                         </div>
                     )}
                     {imageLoading && (
                         <div className="flex justify-center items-center p-8 w-full">
                             <Loader2 className="mr-2 h-8 w-8 animate-spin" />
-                            <p>Görsel oluşturuluyor... Bu işlem biraz uzun sürebilir.</p>
+                            <p>Görseller oluşturuluyor... Bu işlem biraz uzun sürebilir.</p>
                         </div>
                     )}
-                    {imageResult && (
-                        <div className="w-full p-1 border bg-background rounded-lg shadow-inner">
-                            <img src={imageResult.imageDataUri} alt="Kavramsal Görsel" className="w-full h-auto object-contain" data-ai-hint="illustration concept"/>
-                        </div>
+                    {imageResults && (
+                        <Carousel className="w-full max-w-xl mx-auto" opts={{ loop: true }}>
+                          <CarouselContent>
+                              {imageResults.images.map((imageDataUri, index) => (
+                                  <CarouselItem key={index} className="flex flex-col items-center text-center">
+                                      <div className="p-1 border bg-muted rounded-lg shadow-inner w-full">
+                                          <img src={imageDataUri} alt={result.scenes[index]?.description || `Scene ${index + 1}`} className="w-full h-auto object-contain aspect-video" data-ai-hint="scene illustration"/>
+                                      </div>
+                                      <p className="text-sm text-muted-foreground mt-2 h-10">{result.scenes[index]?.description}</p>
+                                  </CarouselItem>
+                              ))}
+                          </CarouselContent>
+                          <CarouselPrevious />
+                          <CarouselNext />
+                      </Carousel>
                     )}
                   </div>
                 </CardContent>

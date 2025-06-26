@@ -7,7 +7,7 @@ import {
   type SimplifyTopicAnimationOutput, 
   type SimplifyTopicDiagramOutput 
 } from '@/ai/flows/topic-simplifier';
-import { generateIllustrativeImage, type GenerateImageOutput } from '@/ai/flows/image-generator';
+import { generateSceneImages, type GenerateSceneImagesOutput } from '@/ai/flows/image-generator';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Sparkles, Wand2, FileText, Network, Film, Image as ImageIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -55,7 +55,7 @@ export function TopicSimplifierForm() {
   const [submittedTopic, setSubmittedTopic] = useState<string>('');
 
   const [imageLoading, setImageLoading] = useState(false);
-  const [imageResult, setImageResult] = useState<GenerateImageOutput | null>(null);
+  const [imageResults, setImageResults] = useState<GenerateSceneImagesOutput | null>(null);
   const [imageStyle, setImageStyle] = useState('Fotogerçekçi');
   const imageStyles = ['Fotogerçekçi', 'Dijital Sanat', 'Sulu Boya', 'Çizgi Roman', 'Düşük Poli'];
 
@@ -71,7 +71,7 @@ export function TopicSimplifierForm() {
     setLoading(true);
     setResult(null);
     setDiagramResult(null);
-    setImageResult(null);
+    setImageResults(null);
     setSubmittedTopic(values.topic);
     try {
       const res = await simplifyTopicAsAnimation({ topic: values.topic });
@@ -109,18 +109,19 @@ export function TopicSimplifierForm() {
   };
 
   const handleGenerateImage = async () => {
-    if (!submittedTopic) return;
+    if (!result?.scenes?.length) return;
     setImageLoading(true);
-    setImageResult(null);
+    setImageResults(null);
     try {
-      const res = await generateIllustrativeImage({ topic: submittedTopic, style: imageStyle });
-      setImageResult(res);
+      const sceneDescriptions = result.scenes.map(s => s.description);
+      const res = await generateSceneImages({ scenes: sceneDescriptions, style: imageStyle });
+      setImageResults(res);
     } catch (error) {
       console.error(error);
       toast({
         variant: 'destructive',
         title: 'An error occurred.',
-        description: 'Failed to generate the image. Please try again.',
+        description: 'Failed to generate the images. Please try again.',
       });
     } finally {
       setImageLoading(false);
@@ -239,10 +240,10 @@ export function TopicSimplifierForm() {
                     )}
                   </div>
                   <div className="pt-6 border-t">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><ImageIcon /> Kavramsal Görsel</h3>
-                    {!imageResult && !imageLoading && (
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><ImageIcon /> Sahne Görselleri</h3>
+                    {!imageResults && !imageLoading && (
                         <div className="flex flex-col items-center text-center gap-4 p-4 border-2 border-dashed rounded-lg">
-                            <p className="text-muted-foreground">Konuyu temsil eden kavramsal bir görsel oluşturun. Lütfen bir tarz seçin:</p>
+                            <p className="text-muted-foreground">Animasyon sahnelerini temel alan görseller oluşturun. Lütfen bir tarz seçin:</p>
                              <RadioGroup defaultValue="Fotogerçekçi" value={imageStyle} onValueChange={setImageStyle} className="flex flex-wrap justify-center gap-x-6 gap-y-2 my-2">
                               {imageStyles.map((style) => (
                                 <div key={style} className="flex items-center space-x-2">
@@ -252,20 +253,31 @@ export function TopicSimplifierForm() {
                               ))}
                             </RadioGroup>
                             <Button onClick={handleGenerateImage} disabled={imageLoading} className="mt-2">
-                                <Sparkles className="mr-2 h-4 w-4" /> Görsel Oluştur
+                                <Sparkles className="mr-2 h-4 w-4" /> Görselleri Oluştur
                             </Button>
                         </div>
                     )}
                     {imageLoading && (
                         <div className="flex justify-center items-center p-8 w-full">
                              <Loader2 className="mr-2 h-8 w-8 animate-spin" />
-                             <p>Görsel oluşturuluyor... Bu işlem biraz uzun sürebilir.</p>
+                             <p>Görseller oluşturuluyor... Bu işlem biraz uzun sürebilir.</p>
                         </div>
                     )}
-                    {imageResult && (
-                        <div className="w-full p-1 border bg-background rounded-lg shadow-inner">
-                            <img src={imageResult.imageDataUri} alt="Kavramsal Görsel" className="w-full h-auto object-contain" data-ai-hint="illustration concept"/>
-                        </div>
+                    {imageResults && (
+                        <Carousel className="w-full max-w-xl mx-auto" opts={{ loop: true }}>
+                          <CarouselContent>
+                              {imageResults.images.map((imageDataUri, index) => (
+                                  <CarouselItem key={index} className="flex flex-col items-center text-center">
+                                      <div className="p-1 border bg-muted rounded-lg shadow-inner w-full">
+                                          <img src={imageDataUri} alt={result.scenes[index]?.description || `Scene ${index + 1}`} className="w-full h-auto object-contain aspect-video" data-ai-hint="scene illustration"/>
+                                      </div>
+                                      <p className="text-sm text-muted-foreground mt-2 h-10">{result.scenes[index]?.description}</p>
+                                  </CarouselItem>
+                              ))}
+                          </CarouselContent>
+                          <CarouselPrevious />
+                          <CarouselNext />
+                      </Carousel>
                     )}
                   </div>
               </CardContent>

@@ -1,62 +1,66 @@
 'use server';
 /**
- * @fileOverview Generates an illustrative image from a text prompt.
+ * @fileOverview Generates illustrative images from a series of text prompts (scenes).
  *
- * - generateIllustrativeImage - A function that handles image generation.
- * - GenerateImageInput - The input type for the function.
- * - GenerateImageOutput - The return type for the function.
+ * - generateSceneImages - A function that handles image generation for multiple scenes.
+ * - GenerateSceneImagesInput - The input type for the function.
+ * - GenerateSceneImagesOutput - The return type for the function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const GenerateImageInputSchema = z.object({
-  topic: z.string().describe('The topic or summary for which to generate an image.'),
-  style: z.string().optional().default('Fotogerçekçi').describe('The visual style for the image.'),
+const GenerateSceneImagesInputSchema = z.object({
+  scenes: z.array(z.string()).describe('An array of scene descriptions for which to generate images.'),
+  style: z.string().optional().default('Fotogerçekçi').describe('The visual style for the images.'),
 });
-export type GenerateImageInput = z.infer<typeof GenerateImageInputSchema>;
+export type GenerateSceneImagesInput = z.infer<typeof GenerateSceneImagesInputSchema>;
 
-const GenerateImageOutputSchema = z.object({
-  imageDataUri: z.string().describe('The generated image as a data URI.'),
+const GenerateSceneImagesOutputSchema = z.object({
+  images: z.array(z.string().describe('The generated images as data URIs.')),
 });
-export type GenerateImageOutput = z.infer<typeof GenerateImageOutputSchema>;
+export type GenerateSceneImagesOutput = z.infer<typeof GenerateSceneImagesOutputSchema>;
 
-const imageGenerationFlow = ai.defineFlow(
+const generateSceneImagesFlow = ai.defineFlow(
   {
-    name: 'imageGenerationFlow',
-    inputSchema: GenerateImageInputSchema,
-    outputSchema: GenerateImageOutputSchema,
+    name: 'generateSceneImagesFlow',
+    inputSchema: GenerateSceneImagesInputSchema,
+    outputSchema: GenerateSceneImagesOutputSchema,
   },
-  async ({topic, style}) => {
-    const illustrativePrompt = `Create a high-quality, professional, and visually compelling educational illustration that conceptually represents the following topic.
+  async ({scenes, style}) => {
+    const imagePromises = scenes.map(async (sceneDescription) => {
+      const illustrativePrompt = `Create a high-quality, professional, and visually compelling educational image that conceptually represents the following scene. Focus on creating a powerful visual metaphor.
 
 The desired visual style is: **${style}**.
 
-The overall aesthetic should be modern and clean, suitable for a presentation or textbook. Focus on creating a powerful visual metaphor for the core idea.
+Scene: ${sceneDescription}`;
 
-Topic: ${topic}`;
+      const {media} = await ai.generate({
+        model: 'googleai/gemini-2.0-flash-preview-image-generation',
+        prompt: illustrativePrompt,
+        config: {
+          responseModalities: ['TEXT', 'IMAGE'],
+        },
+      });
 
-    const {media} = await ai.generate({
-      model: 'googleai/gemini-2.0-flash-preview-image-generation',
-      prompt: illustrativePrompt,
-      config: {
-        responseModalities: ['TEXT', 'IMAGE'],
-      },
+      if (!media?.url) {
+        throw new Error(`Image generation failed for scene: "${sceneDescription}"`);
+      }
+
+      return media.url;
     });
 
-    if (!media?.url) {
-      throw new Error('Image generation failed to return an image.');
-    }
+    const images = await Promise.all(imagePromises);
 
     return {
-      imageDataUri: media.url,
+      images,
     };
   }
 );
 
 
-export async function generateIllustrativeImage(
-  input: GenerateImageInput
-): Promise<GenerateImageOutput> {
-  return await imageGenerationFlow(input);
+export async function generateSceneImages(
+  input: GenerateSceneImagesInput
+): Promise<GenerateSceneImagesOutput> {
+  return await generateSceneImagesFlow(input);
 }
