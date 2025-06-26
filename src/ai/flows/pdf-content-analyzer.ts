@@ -42,7 +42,7 @@ const PdfContentAnalyzerPromptOutputSchema = z.object({
         z.object({
             scene: z.string().describe("A short, descriptive title for the scene based on PDF content."),
             description: z.string().describe("A detailed description of what happens in this scene, in Turkish."),
-            animatedSvgPrompt: z.string().describe("A detailed prompt in English for an AI that generates animated SVGs. Describe a simple, looping animation that visually represents the scene using a flat, colorful design style.")
+            animatedSvgPrompt: z.string().describe("A highly detailed and descriptive prompt in English for an AI that generates professional, visually rich animated SVGs. The prompt should describe a scene that is both educational and aesthetically pleasing, avoiding over-simplification. Focus on clear actions and detailed objects.")
         })
     ).describe('A scene-by-scene breakdown for an animation that explains the key concepts from the PDF. Generate between 3 and 5 scenes.'),
 });
@@ -59,7 +59,7 @@ const pdfContentAnalyzerPrompt = ai.definePrompt({
   
   For each scene in the storyboard, provide a title (can be in English), a detailed description of the visuals and action in Turkish, and a specific prompt for an AI model to generate a corresponding **animated SVG** (this prompt must be in English).
   
-  The visual style for the animated SVGs should be a simple, colorful, flat-design educational illustration with a looping animation.
+  The visual style for the animated SVGs should be a professional, visually rich, and detailed educational illustration with a smooth, looping animation. It should be engaging and clear, but not childish or overly simplistic.
   
   PDF Content: {{media url=pdfDataUri}}`,
 });
