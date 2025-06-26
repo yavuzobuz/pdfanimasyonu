@@ -21,11 +21,11 @@ const AnalyzePdfContentInputSchema = z.object({
 export type AnalyzePdfContentInput = z.infer<typeof AnalyzePdfContentInputSchema>;
 
 const AnalyzePdfContentOutputSchema = z.object({
-  summary: z.string().describe('A simplified summary of the PDF content.'),
+  summary: z.string().describe('A simplified summary of the PDF content, in Turkish.'),
   animationScenario: z.array(
     z.object({
       scene: z.string().describe("A short title for the animation scene."),
-      description: z.string().describe("A detailed description of what happens in this scene."),
+      description: z.string().describe("A detailed description of what happens in this scene, in Turkish."),
       imageDataUri: z.string().describe("The generated image for the scene as a data URI.")
     })
   ).describe('A scene-by-scene breakdown for an animation that explains the PDF content, complete with generated visuals.'),
@@ -37,12 +37,12 @@ export async function analyzePdfContent(input: AnalyzePdfContentInput): Promise<
 }
 
 const PdfContentAnalyzerPromptOutputSchema = z.object({
-    summary: z.string().describe('A simplified summary of the PDF content.'),
+    summary: z.string().describe('A simplified summary of the PDF content in Turkish.'),
     animationScenario: z.array(
         z.object({
             scene: z.string().describe("A short, descriptive title for the scene based on PDF content."),
-            description: z.string().describe("A detailed description of what happens in this scene, based on the PDF content."),
-            animatedSvgPrompt: z.string().describe("A detailed prompt for an AI that generates animated SVGs. Describe a simple, looping animation that visually represents the scene using a flat, colorful design style.")
+            description: z.string().describe("A detailed description of what happens in this scene, in Turkish."),
+            animatedSvgPrompt: z.string().describe("A detailed prompt in English for an AI that generates animated SVGs. Describe a simple, looping animation that visually represents the scene using a flat, colorful design style.")
         })
     ).describe('A scene-by-scene breakdown for an animation that explains the key concepts from the PDF. Generate between 3 and 5 scenes.'),
 });
@@ -51,13 +51,13 @@ const pdfContentAnalyzerPrompt = ai.definePrompt({
   name: 'pdfContentAnalyzerPrompt',
   input: {schema: AnalyzePdfContentInputSchema},
   output: {schema: PdfContentAnalyzerPromptOutputSchema},
-  prompt: `You are an expert educator and animator skilled at simplifying complex topics from documents.
+  prompt: `You are an expert educator and animator skilled at simplifying complex topics from documents. Your responses for summary and description must be in Turkish.
 
   Analyze the content of the following PDF document. Your task is to create:
-  1.  A simplified summary of the key concepts.
+  1.  A simplified summary of the key concepts, in Turkish.
   2.  A multi-scene animation storyboard to explain these concepts visually.
   
-  For each scene in the storyboard, provide a title, a detailed description of the visuals and action, and a specific prompt for an AI model to generate a corresponding **animated SVG**.
+  For each scene in the storyboard, provide a title (can be in English), a detailed description of the visuals and action in Turkish, and a specific prompt for an AI model to generate a corresponding **animated SVG** (this prompt must be in English).
   
   The visual style for the animated SVGs should be a simple, colorful, flat-design educational illustration with a looping animation.
   
@@ -80,7 +80,7 @@ const analyzePdfContentFlow = ai.defineFlow(
     const scenarioWithAnimations = await Promise.all(
         promptOutput.animationScenario.map(async (scene) => {
             const svgGenerationResponse = await ai.generate({
-                prompt: `You are an expert SVG animator. Create a self-contained, animated SVG using CSS animations. The SVG must not use any external scripts or assets. The animation should be a simple, continuous loop. Make it visually appealing, with a flat design style, and ensure it is responsive by using a viewBox attribute. The color palette should be calming and educational, using primary: #5DADE2, background: #EBF5FB, accent: #F5B041.
+                prompt: `You are an expert SVG animator. Create a self-contained, animated SVG using CSS animations. The SVG must not use any external scripts or assets. The animation should be a simple, continuous loop. Make it visually appealing, with a flat design style, and ensure it is responsive by using a viewBox attribute. The background should be transparent. The color palette should be calming and educational, using primary: #5DADE2, accent: #F5B041.
                 
 Only output the raw SVG code, starting with <svg> and ending with </svg>. Do not include any other text, explanations, or markdown code fences.
     
@@ -89,7 +89,6 @@ ${scene.animatedSvgPrompt}`
             });
     
             let svgCode = svgGenerationResponse.text;
-            // The model may wrap the SVG in markdown, so we extract it.
             const svgMatch = svgCode.match(/<svg[\s\S]*?<\/svg>/s);
             if (svgMatch) {
                 svgCode = svgMatch[0];
