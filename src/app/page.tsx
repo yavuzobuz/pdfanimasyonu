@@ -14,11 +14,11 @@ export default function Home() {
         <div className="container mx-auto px-4 py-8 md:py-12">
           <div className="text-center mb-10">
             <h1 className="text-4xl md:text-5xl font-headline font-bold text-foreground tracking-tight">
-              AI-Powered Learning Diagrams
+              AI-Powered Learning Animations & Diagrams
             </h1>
             <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
               Transform complex topics and PDF documents into simple, engaging
-              diagrams. Perfect for educators and students alike.
+              animations and diagrams. Perfect for educators and students alike.
             </p>
           </div>
 

@@ -4,7 +4,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'VisuaLearn',
-  description: 'Generate educational animations from PDFs and topics with AI.',
+  description: 'Generate educational animations and diagrams from PDFs and topics with AI.',
 };
 
 export default function RootLayout({

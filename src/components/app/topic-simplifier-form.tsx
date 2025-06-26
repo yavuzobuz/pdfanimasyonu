@@ -1,10 +1,14 @@
 "use client";
 
 import { useState } from 'react';
-import type { SimplifyTopicOutput } from '@/ai/flows/topic-simplifier';
-import { simplifyTopic } from '@/ai/flows/topic-simplifier';
+import { 
+  simplifyTopicAsAnimation, 
+  simplifyTopicAsDiagram, 
+  type SimplifyTopicAnimationOutput, 
+  type SimplifyTopicDiagramOutput 
+} from '@/ai/flows/topic-simplifier';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Sparkles, Wand2, FileText, Network } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, FileText, Network, Film } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -16,6 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import {
   Form,
   FormControl,
@@ -39,8 +44,13 @@ const formSchema = z.object({
 
 export function TopicSimplifierForm() {
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<SimplifyTopicOutput | null>(null);
+  const [result, setResult] = useState<SimplifyTopicAnimationOutput | null>(null);
   const { toast } = useToast();
+
+  const [diagramLoading, setDiagramLoading] = useState(false);
+  const [diagramResult, setDiagramResult] = useState<SimplifyTopicDiagramOutput | null>(null);
+  const [submittedTopic, setSubmittedTopic] = useState<string>('');
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -52,8 +62,10 @@ export function TopicSimplifierForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
     setResult(null);
+    setDiagramResult(null); // Clear previous diagram
+    setSubmittedTopic(values.topic);
     try {
-      const res = await simplifyTopic({ topic: values.topic });
+      const res = await simplifyTopicAsAnimation({ topic: values.topic });
       setResult(res);
     } catch (error) {
       console.error(error);
@@ -68,6 +80,25 @@ export function TopicSimplifierForm() {
     }
   }
 
+  const handleGenerateDiagram = async () => {
+    if (!submittedTopic) return;
+    setDiagramLoading(true);
+    setDiagramResult(null);
+    try {
+      const res = await simplifyTopicAsDiagram({ topic: submittedTopic });
+      setDiagramResult(res);
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'An error occurred.',
+        description: 'Failed to generate the diagram. Please try again.',
+      });
+    } finally {
+      setDiagramLoading(false);
+    }
+  };
+
   return (
     <Card className="shadow-lg">
       <CardHeader>
@@ -76,7 +107,7 @@ export function TopicSimplifierForm() {
           Topic Simplifier
         </CardTitle>
         <CardDescription>
-          Enter a complex topic, and our AI will generate a simplified summary and a diagram to explain it.
+          Enter a complex topic, and our AI will generate a simplified animation and diagram to explain it.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -107,7 +138,7 @@ export function TopicSimplifierForm() {
               ) : (
                 <>
                   <Sparkles className="mr-2 h-4 w-4" />
-                  Generate Diagram
+                  Generate Animation
                 </>
               )}
             </Button>
@@ -116,7 +147,7 @@ export function TopicSimplifierForm() {
 
         {loading && (
           <div className="mt-6 text-center text-muted-foreground">
-            <p>AI is thinking and creating a diagram... this may take a moment.</p>
+            <p>AI is thinking and creating an animation... this may take a moment.</p>
           </div>
         )}
 
@@ -125,28 +156,58 @@ export function TopicSimplifierForm() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Network />
-                  Açıklayıcı Diyagram
+                  <Film />
+                  Eğitici Animasyon ve Diyagram
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                  <div className="w-full p-1">
-                    <div className="w-full relative rounded-lg overflow-hidden bg-background shadow-inner border">
-                      <img
-                        src={result.diagramDataUri}
-                        alt="Açıklayıcı diyagram"
-                        className="w-full h-auto object-contain"
-                        data-ai-hint="diagram flowchart"
-                      />
-                    </div>
+              <CardContent className="space-y-6">
+                  <div>
+                      <h3 className="text-lg font-semibold mb-4">Animasyon Sahneleri</h3>
+                      <Carousel className="w-full max-w-xl mx-auto" opts={{ loop: true }}>
+                          <CarouselContent>
+                              {result.scenes.map((scene, index) => (
+                                  <CarouselItem key={index} className="flex flex-col items-center text-center">
+                                      <div className="p-1 border bg-muted rounded-lg shadow-inner w-full">
+                                          <img src={scene.svgDataUri} alt={scene.description} className="w-full h-auto object-contain aspect-video" data-ai-hint="animation scene" />
+                                      </div>
+                                      <p className="text-sm text-muted-foreground mt-2 h-10">{scene.description}</p>
+                                  </CarouselItem>
+                              ))}
+                          </CarouselContent>
+                          <CarouselPrevious />
+                          <CarouselNext />
+                      </Carousel>
                   </div>
 
-                  <div className="mt-6 pt-6 border-t">
+                  <div className="pt-6 border-t">
                     <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
                       <FileText />
                       Konu Özeti
                     </h3>
                     <p className="text-sm text-muted-foreground">{result.summary}</p>
+                  </div>
+
+                  <div className="pt-6 border-t">
+                    <h3 className="text-lg font-semibold mb-2 flex items-center gap-2"><Network /> Diyagram Şeması</h3>
+                    {!diagramResult && !diagramLoading && (
+                        <div className="flex flex-col items-center text-center gap-4 p-4 border-2 border-dashed rounded-lg">
+                            <p className="text-muted-foreground">Konuyu özetleyen bir diyagram da oluşturabilirsiniz.</p>
+                            <Button onClick={handleGenerateDiagram} disabled={diagramLoading}>
+                                <Sparkles className="mr-2 h-4 w-4" /> Diyagram Oluştur
+                            </Button>
+                        </div>
+                    )}
+                    {diagramLoading && (
+                        <div className="flex justify-center items-center p-8 w-full">
+                             <Loader2 className="mr-2 h-8 w-8 animate-spin" />
+                             <p>Diyagram oluşturuluyor...</p>
+                        </div>
+                    )}
+                    {diagramResult && (
+                        <div className="w-full p-1 border bg-background rounded-lg shadow-inner">
+                            <img src={diagramResult.diagramDataUri} alt="Diyagram Şeması" className="w-full h-auto object-contain" data-ai-hint="diagram flowchart"/>
+                        </div>
+                    )}
                   </div>
               </CardContent>
             </Card>

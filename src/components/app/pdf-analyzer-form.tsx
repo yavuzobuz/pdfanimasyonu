@@ -1,20 +1,24 @@
 "use client";
 
 import { useState, type ChangeEvent } from 'react';
-import { analyzePdfContent, type AnalyzePdfContentOutput } from '@/ai/flows/pdf-content-analyzer';
-import { FileUp, Loader2, Sparkles, UploadCloud, X, FileText, Network } from 'lucide-react';
+import { analyzePdfContentAsAnimation, analyzePdfContentAsDiagram, type AnalyzePdfContentAnimationOutput, type AnalyzePdfContentDiagramOutput } from '@/ai/flows/pdf-content-analyzer';
+import { FileUp, Loader2, Sparkles, UploadCloud, X, FileText, Network, Film } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { useToast } from '@/hooks/use-toast';
 
 
 export function PdfAnalyzerForm() {
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<AnalyzePdfContentOutput | null>(null);
+  const [result, setResult] = useState<AnalyzePdfContentAnimationOutput | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [fileDataUri, setFileDataUri] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const [diagramLoading, setDiagramLoading] = useState(false);
+  const [diagramResult, setDiagramResult] = useState<AnalyzePdfContentDiagramOutput | null>(null);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -40,6 +44,7 @@ export function PdfAnalyzerForm() {
     setFile(null);
     setFileDataUri(null);
     setResult(null);
+    setDiagramResult(null);
   };
   
   const handleSubmit = async () => {
@@ -53,8 +58,9 @@ export function PdfAnalyzerForm() {
     }
     setLoading(true);
     setResult(null);
+    setDiagramResult(null);
     try {
-      const res = await analyzePdfContent({ pdfDataUri: fileDataUri });
+      const res = await analyzePdfContentAsAnimation({ pdfDataUri: fileDataUri });
       setResult(res);
     } catch (error) {
       console.error(error);
@@ -68,6 +74,26 @@ export function PdfAnalyzerForm() {
     }
   };
 
+  const handleGenerateDiagram = async () => {
+    if (!fileDataUri) return;
+    setDiagramLoading(true);
+    setDiagramResult(null);
+    try {
+      const res = await analyzePdfContentAsDiagram({ pdfDataUri: fileDataUri });
+      setDiagramResult(res);
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'An error occurred.',
+        description: 'Failed to generate the diagram. Please try again.',
+      });
+    } finally {
+      setDiagramLoading(false);
+    }
+  };
+
+
   return (
     <Card className="shadow-lg">
       <CardHeader>
@@ -76,7 +102,7 @@ export function PdfAnalyzerForm() {
             PDF Analyzer
         </CardTitle>
         <CardDescription>
-          Upload a PDF document, and our AI will extract key concepts and generate a simplified diagram.
+          Upload a PDF document, and our AI will generate a simplified animation and diagram.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -112,14 +138,14 @@ export function PdfAnalyzerForm() {
           ) : (
             <>
               <Sparkles className="mr-2 h-4 w-4" />
-              Generate Diagram
+              Generate Animation
             </>
           )}
         </Button>
         
         {loading && (
           <div className="mt-6 text-center text-muted-foreground">
-            <p>AI is reading your PDF and creating a diagram... this might take a moment.</p>
+            <p>AI is reading your PDF and creating an animation... this might take a moment.</p>
           </div>
         )}
 
@@ -128,28 +154,56 @@ export function PdfAnalyzerForm() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Network />
-                    Açıklayıcı Diyagram
+                    <Film />
+                    Eğitici Animasyon ve Diyagram
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="w-full p-1">
-                    <div className="w-full relative rounded-lg overflow-hidden bg-background shadow-inner border">
-                      <img
-                        src={result.diagramDataUri}
-                        alt="Açıklayıcı diyagram"
-                        className="w-full h-auto object-contain"
-                        data-ai-hint="diagram flowchart"
-                      />
-                    </div>
+                <CardContent className="space-y-6">
+                   <div>
+                      <h3 className="text-lg font-semibold mb-4">Animasyon Sahneleri</h3>
+                      <Carousel className="w-full max-w-xl mx-auto" opts={{ loop: true }}>
+                          <CarouselContent>
+                              {result.scenes.map((scene, index) => (
+                                  <CarouselItem key={index} className="flex flex-col items-center text-center">
+                                      <div className="p-1 border bg-muted rounded-lg shadow-inner w-full">
+                                          <img src={scene.svgDataUri} alt={scene.description} className="w-full h-auto object-contain aspect-video" data-ai-hint="animation scene" />
+                                      </div>
+                                      <p className="text-sm text-muted-foreground mt-2 h-10">{scene.description}</p>
+                                  </CarouselItem>
+                              ))}
+                          </CarouselContent>
+                          <CarouselPrevious />
+                          <CarouselNext />
+                      </Carousel>
                   </div>
-                  
                   <div className="mt-6 pt-6 border-t">
                     <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
                       <FileText />
                       Konu Özeti
                     </h3>
                     <p className="text-sm text-muted-foreground">{result.summary}</p>
+                  </div>
+                   <div className="pt-6 border-t">
+                    <h3 className="text-lg font-semibold mb-2 flex items-center gap-2"><Network /> Diyagram Şeması</h3>
+                    {!diagramResult && !diagramLoading && (
+                        <div className="flex flex-col items-center text-center gap-4 p-4 border-2 border-dashed rounded-lg">
+                            <p className="text-muted-foreground">Konuyu özetleyen bir diyagram da oluşturabilirsiniz.</p>
+                            <Button onClick={handleGenerateDiagram} disabled={diagramLoading}>
+                                <Sparkles className="mr-2 h-4 w-4" /> Diyagram Oluştur
+                            </Button>
+                        </div>
+                    )}
+                    {diagramLoading && (
+                        <div className="flex justify-center items-center p-8 w-full">
+                             <Loader2 className="mr-2 h-8 w-8 animate-spin" />
+                             <p>Diyagram oluşturuluyor...</p>
+                        </div>
+                    )}
+                    {diagramResult && (
+                        <div className="w-full p-1 border bg-background rounded-lg shadow-inner">
+                            <img src={diagramResult.diagramDataUri} alt="Diyagram Şeması" className="w-full h-auto object-contain" data-ai-hint="diagram flowchart"/>
+                        </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
