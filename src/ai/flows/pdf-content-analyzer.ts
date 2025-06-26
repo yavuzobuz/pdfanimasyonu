@@ -80,14 +80,23 @@ const analyzePdfContentFlow = ai.defineFlow(
     const scenarioWithAnimations = await Promise.all(
         promptOutput.animationScenario.map(async (scene) => {
             const svgGenerationResponse = await ai.generate({
-                prompt: `You are an expert SVG animator. Create a self-contained, animated SVG using CSS animations. The SVG must not use any external scripts or assets. The animation should be a simple, continuous loop.
+                prompt: `You are a world-class SVG animator and illustrator. Your task is to generate a high-quality, professional, and visually compelling animated SVG.
 
-Your task is to create a visually rich and detailed illustration that accurately represents the scene description. Avoid overly simplistic or abstract geometric shapes. Instead, focus on creating a recognizable and aesthetically pleasing depiction of the objects and actions in the scene.
+**Style requirements:**
+- **Animation:** The animation must be a smooth, continuous, and seamless loop.
+- **Self-Contained:** The SVG must be self-contained using CSS animations. No external scripts or assets are allowed.
+- **Aesthetics:** Use a modern, clean, flat-iconography style. The illustration must be detailed and sophisticated.
+- **NO Simple Shapes:** Avoid overly simplistic, abstract, or childish geometric shapes. The output must be a professional-grade illustration that accurately represents the scene.
+- **Responsive:** The SVG must be responsive and scale correctly by using a 'viewBox' attribute.
+- **Background:** The background must be transparent.
+- **Colors:** Use a harmonious and professional color palette. You have creative freedom.
 
-Make it visually appealing, with a flat design style, and ensure it is responsive by using a viewBox attribute. The background should be transparent. The color palette should be calming and educational, using primary: #5DADE2, accent: #F5B041.
-                
-Only output the raw SVG code, starting with <svg> and ending with </svg>. Do not include any other text, explanations, or markdown code fences.
-    
+**Output format:**
+- Only output the raw SVG code.
+- Start with '<svg ...>' and end with '</svg>'.
+- Do NOT include any other text, explanations, or markdown code fences like \`\`\`.
+
+**Task:**
 Create an animated SVG for the following scene:
 ${scene.animatedSvgPrompt}`
             });
