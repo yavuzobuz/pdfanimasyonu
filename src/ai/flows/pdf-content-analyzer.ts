@@ -57,7 +57,7 @@ const pdfContentAnalyzerPrompt = ai.definePrompt({
   1.  A simplified summary of the key concepts, in Turkish.
   2.  A multi-scene animation storyboard to explain these concepts visually.
   
-  For each scene in the storyboard, provide a title (can be in English), a detailed description of the visuals and action in Turkish, and a specific prompt for an AI model to generate a corresponding **animated SVG** (this prompt must be in English).
+  For each scene in the storyboard, provide a title (can be in English), a detailed description of the visuals and action in Turkish, and a specific, detailed prompt for an AI model to generate a corresponding **animated SVG** (this prompt must be in English).
   
   The visual style for the animated SVGs should be a professional, visually rich, and detailed educational illustration with a smooth, looping animation. It should be engaging and clear, but not childish or overly simplistic.
   
