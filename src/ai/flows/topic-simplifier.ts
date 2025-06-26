@@ -80,7 +80,13 @@ Create an animated SVG for the following scene:
 ${scene.animatedSvgPrompt}`
             });
 
-            const svgCode = svgGenerationResponse.text;
+            let svgCode = svgGenerationResponse.text;
+            // The model may wrap the SVG in markdown, so we extract it.
+            const svgMatch = svgCode.match(/<svg[\s\S]*?<\/svg>/s);
+            if (svgMatch) {
+                svgCode = svgMatch[0];
+            }
+    
             const svgDataUri = 'data:image/svg+xml;base64,' + Buffer.from(svgCode).toString('base64');
     
             return {
