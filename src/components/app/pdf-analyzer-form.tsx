@@ -2,7 +2,8 @@
 
 import { useState, type ChangeEvent } from 'react';
 import { analyzePdfContentAsAnimation, analyzePdfContentAsDiagram, type AnalyzePdfContentAnimationOutput, type AnalyzePdfContentDiagramOutput } from '@/ai/flows/pdf-content-analyzer';
-import { FileUp, Loader2, Sparkles, UploadCloud, X, FileText, Network, Film } from 'lucide-react';
+import { generateIllustrativeImage, type GenerateImageOutput } from '@/ai/flows/image-generator';
+import { FileUp, Loader2, Sparkles, UploadCloud, X, FileText, Network, Film, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,10 @@ export function PdfAnalyzerForm() {
 
   const [diagramLoading, setDiagramLoading] = useState(false);
   const [diagramResult, setDiagramResult] = useState<AnalyzePdfContentDiagramOutput | null>(null);
+
+  const [imageLoading, setImageLoading] = useState(false);
+  const [imageResult, setImageResult] = useState<GenerateImageOutput | null>(null);
+
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -45,6 +50,7 @@ export function PdfAnalyzerForm() {
     setFileDataUri(null);
     setResult(null);
     setDiagramResult(null);
+    setImageResult(null);
   };
   
   const handleSubmit = async () => {
@@ -59,6 +65,7 @@ export function PdfAnalyzerForm() {
     setLoading(true);
     setResult(null);
     setDiagramResult(null);
+    setImageResult(null);
     try {
       const res = await analyzePdfContentAsAnimation({ pdfDataUri: fileDataUri });
       setResult(res);
@@ -90,6 +97,25 @@ export function PdfAnalyzerForm() {
       });
     } finally {
       setDiagramLoading(false);
+    }
+  };
+
+  const handleGenerateImage = async () => {
+    if (!result?.summary) return;
+    setImageLoading(true);
+    setImageResult(null);
+    try {
+      const res = await generateIllustrativeImage({ topic: result.summary });
+      setImageResult(res);
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'An error occurred.',
+        description: 'Failed to generate the image. Please try again.',
+      });
+    } finally {
+      setImageLoading(false);
     }
   };
 
@@ -202,6 +228,28 @@ export function PdfAnalyzerForm() {
                     {diagramResult && (
                         <div className="w-full p-1 border bg-background rounded-lg shadow-inner">
                             <img src={diagramResult.diagramDataUri} alt="Diyagram Şeması" className="w-full h-auto object-contain" data-ai-hint="diagram flowchart"/>
+                        </div>
+                    )}
+                  </div>
+                  <div className="pt-6 border-t">
+                    <h3 className="text-lg font-semibold mb-2 flex items-center gap-2"><ImageIcon /> Kavramsal Görsel</h3>
+                    {!imageResult && !imageLoading && (
+                        <div className="flex flex-col items-center text-center gap-4 p-4 border-2 border-dashed rounded-lg">
+                            <p className="text-muted-foreground">PDF özetini temsil eden kavramsal bir görsel oluşturun.</p>
+                            <Button onClick={handleGenerateImage} disabled={imageLoading}>
+                                <Sparkles className="mr-2 h-4 w-4" /> Görsel Oluştur
+                            </Button>
+                        </div>
+                    )}
+                    {imageLoading && (
+                        <div className="flex justify-center items-center p-8 w-full">
+                            <Loader2 className="mr-2 h-8 w-8 animate-spin" />
+                            <p>Görsel oluşturuluyor... Bu işlem biraz uzun sürebilir.</p>
+                        </div>
+                    )}
+                    {imageResult && (
+                        <div className="w-full p-1 border bg-background rounded-lg shadow-inner">
+                            <img src={imageResult.imageDataUri} alt="Kavramsal Görsel" className="w-full h-auto object-contain" data-ai-hint="illustration concept"/>
                         </div>
                     )}
                   </div>

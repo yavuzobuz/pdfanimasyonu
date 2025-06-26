@@ -7,8 +7,9 @@ import {
   type SimplifyTopicAnimationOutput, 
   type SimplifyTopicDiagramOutput 
 } from '@/ai/flows/topic-simplifier';
+import { generateIllustrativeImage, type GenerateImageOutput } from '@/ai/flows/image-generator';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Sparkles, Wand2, FileText, Network, Film } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, FileText, Network, Film, Image as ImageIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -51,6 +52,9 @@ export function TopicSimplifierForm() {
   const [diagramResult, setDiagramResult] = useState<SimplifyTopicDiagramOutput | null>(null);
   const [submittedTopic, setSubmittedTopic] = useState<string>('');
 
+  const [imageLoading, setImageLoading] = useState(false);
+  const [imageResult, setImageResult] = useState<GenerateImageOutput | null>(null);
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,7 +66,8 @@ export function TopicSimplifierForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
     setResult(null);
-    setDiagramResult(null); // Clear previous diagram
+    setDiagramResult(null);
+    setImageResult(null);
     setSubmittedTopic(values.topic);
     try {
       const res = await simplifyTopicAsAnimation({ topic: values.topic });
@@ -98,6 +103,26 @@ export function TopicSimplifierForm() {
       setDiagramLoading(false);
     }
   };
+
+  const handleGenerateImage = async () => {
+    if (!submittedTopic) return;
+    setImageLoading(true);
+    setImageResult(null);
+    try {
+      const res = await generateIllustrativeImage({ topic: submittedTopic });
+      setImageResult(res);
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'An error occurred.',
+        description: 'Failed to generate the image. Please try again.',
+      });
+    } finally {
+      setImageLoading(false);
+    }
+  };
+
 
   return (
     <Card className="shadow-lg">
@@ -206,6 +231,28 @@ export function TopicSimplifierForm() {
                     {diagramResult && (
                         <div className="w-full p-1 border bg-background rounded-lg shadow-inner">
                             <img src={diagramResult.diagramDataUri} alt="Diyagram Şeması" className="w-full h-auto object-contain" data-ai-hint="diagram flowchart"/>
+                        </div>
+                    )}
+                  </div>
+                  <div className="pt-6 border-t">
+                    <h3 className="text-lg font-semibold mb-2 flex items-center gap-2"><ImageIcon /> Kavramsal Görsel</h3>
+                    {!imageResult && !imageLoading && (
+                        <div className="flex flex-col items-center text-center gap-4 p-4 border-2 border-dashed rounded-lg">
+                            <p className="text-muted-foreground">Konuyu temsil eden kavramsal bir görsel oluşturun.</p>
+                            <Button onClick={handleGenerateImage} disabled={imageLoading}>
+                                <Sparkles className="mr-2 h-4 w-4" /> Görsel Oluştur
+                            </Button>
+                        </div>
+                    )}
+                    {imageLoading && (
+                        <div className="flex justify-center items-center p-8 w-full">
+                             <Loader2 className="mr-2 h-8 w-8 animate-spin" />
+                             <p>Görsel oluşturuluyor... Bu işlem biraz uzun sürebilir.</p>
+                        </div>
+                    )}
+                    {imageResult && (
+                        <div className="w-full p-1 border bg-background rounded-lg shadow-inner">
+                            <img src={imageResult.imageDataUri} alt="Kavramsal Görsel" className="w-full h-auto object-contain" data-ai-hint="illustration concept"/>
                         </div>
                     )}
                   </div>
