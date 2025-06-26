@@ -127,7 +127,7 @@ export function TopicSimplifierForm() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText />
-                  Simplified Summary
+                  Basitleştirilmiş Özet
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -139,10 +139,10 @@ export function TopicSimplifierForm() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <PlayCircle />
-                  Animation Storyboard
+                  Animasyon Senaryosu
                 </CardTitle>
                 <CardDescription>
-                    Here is a scene-by-scene storyboard for your animation.
+                    Animasyonunuz için sahne sahne storyboard aşağıdadır.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -151,9 +151,9 @@ export function TopicSimplifierForm() {
                     {result.animationScenario.map((scene, index) => (
                       <CarouselItem key={index}>
                         <div className="p-1">
-                          <Card>
-                            <CardContent className="flex flex-col md:flex-row items-center justify-center p-6 gap-6">
-                              <div className="md:w-1/2 w-full aspect-video relative rounded-lg overflow-hidden bg-muted/30">
+                          <Card className="bg-card/50">
+                            <CardContent className="flex flex-col items-center justify-center p-4 gap-4">
+                              <div className="w-full aspect-video relative rounded-lg overflow-hidden bg-black shadow-inner">
                                 <img
                                   src={scene.imageDataUri}
                                   alt={scene.scene}
@@ -161,9 +161,9 @@ export function TopicSimplifierForm() {
                                   data-ai-hint="animation scene"
                                 />
                               </div>
-                              <div className="md:w-1/2 w-full space-y-2">
-                                <h3 className="font-bold text-lg">{scene.scene}</h3>
-                                <p className="text-sm text-muted-foreground">{scene.description}</p>
+                              <div className="w-full space-y-2 text-center pt-2">
+                                <h3 className="font-bold text-xl">{scene.scene}</h3>
+                                <p className="text-muted-foreground">{scene.description}</p>
                               </div>
                             </CardContent>
                           </Card>
