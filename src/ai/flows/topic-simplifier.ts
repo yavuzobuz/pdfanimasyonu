@@ -28,9 +28,14 @@ const SimplifyTopicAnimationOutputSchema = z.object({
 });
 export type SimplifyTopicAnimationOutput = z.infer<typeof SimplifyTopicAnimationOutputSchema>;
 
+const TopicAnimationSceneSchema = z.object({
+    visualDescription: z.string().describe("A detailed visual description for a single animation scene, to be used for generating an SVG. This must be in Turkish and focus on clear, serious, educational visuals."),
+    narrative: z.string().describe("The simple, one-sentence narrative for the scene that will be displayed to the user. This must be in Turkish."),
+});
+
 const TopicAnimationScriptSchema = z.object({
   summary: z.string().describe('A simplified summary of the topic suitable for students, in Turkish.'),
-  sceneDescriptions: z.array(z.string()).describe("A list of 3 to 5 scene descriptions for a professional, educational animation explaining the topic. Each description should detail a single, clear visual concept."),
+  scenes: z.array(TopicAnimationSceneSchema).min(3).max(5).describe("A list of 3 to 5 scenes for a professional, educational animation explaining the topic."),
 });
 
 const topicAnimationScriptPrompt = ai.definePrompt({
@@ -38,8 +43,8 @@ const topicAnimationScriptPrompt = ai.definePrompt({
   input: {schema: SimplifyTopicInputSchema},
   output: {schema: TopicAnimationScriptSchema},
   prompt: `You are an expert educator. Your responses must be in Turkish. Take the following topic and create:
-1.  A simplified summary.
-2.  A script for an educational animation with 3 to 5 scenes. For each scene, provide a detailed visual description. The animation's style must be serious, professional, and directly related to the subject matter.
+1.  A simplified summary of the topic.
+2.  A script for an educational animation with 3 to 5 scenes. For each scene, provide a detailed 'visualDescription' for the SVG generation and a simple 'narrative' to be displayed to the user. The animation's style must be serious, professional, and directly related to the subject matter. Avoid cartoonish styles.
 
 Topic: {{{topic}}}
 `,
@@ -102,14 +107,14 @@ export async function simplifyTopicAsAnimation(input: SimplifyTopicInput): Promi
   const { output: script } = await topicAnimationScriptPrompt(input);
   if (!script) throw new Error("Failed to generate animation script.");
 
-  const scenePromises = script.sceneDescriptions.map(async (desc) => {
+  const scenePromises = script.scenes.map(async (scene) => {
     try {
-        const svg = await generateSvg(desc);
-        return { description: desc, svgDataUri: toDataUri(svg) };
+        const svg = await generateSvg(scene.visualDescription);
+        return { description: scene.narrative, svgDataUri: toDataUri(svg) };
     } catch (error) {
-        console.error(`Failed to generate SVG for scene: ${desc}`, error);
+        console.error(`Failed to generate SVG for scene: ${scene.visualDescription}`, error);
         const errorSvg = `<svg width="500" height="300" viewBox="0 0 500" xmlns="http://www.w3.org/2000/svg" fill="hsl(var(--card-foreground))"><rect width="100%" height="100%" fill="hsl(var(--muted))" /><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="20px">Sahne oluşturulamadı.</text></svg>`;
-        return { description: desc, svgDataUri: toDataUri(errorSvg) };
+        return { description: scene.narrative, svgDataUri: toDataUri(errorSvg) };
     }
   });
 
