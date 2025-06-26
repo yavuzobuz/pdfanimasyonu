@@ -153,7 +153,7 @@ export function TopicSimplifierForm() {
                         <div className="p-1">
                           <Card className="bg-card/50">
                             <CardContent className="flex flex-col items-center justify-center p-4 gap-4">
-                              <div className="w-full aspect-video relative rounded-lg overflow-hidden bg-black shadow-inner">
+                              <div className="w-full aspect-video relative rounded-lg overflow-hidden bg-background shadow-inner">
                                 <img
                                   src={scene.imageDataUri}
                                   alt={scene.scene}
