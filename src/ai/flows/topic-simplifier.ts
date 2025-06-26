@@ -44,7 +44,10 @@ const topicAnimationScriptPrompt = ai.definePrompt({
   output: {schema: TopicAnimationScriptSchema},
   prompt: `You are an expert educator. Your responses must be in Turkish. Take the following topic and create:
 1.  A simplified summary of the topic.
-2.  A script for an educational animation with 3 to 5 scenes. For each scene, provide a detailed 'visualDescription' for the SVG generation and a simple 'narrative' to be displayed to the user. The animation's style must be serious, professional, and directly related to the subject matter. Avoid cartoonish styles.
+2.  A script for an educational animation with 3 to 5 scenes. For each scene, provide:
+    a. 'visualDescription': A literal, concrete description for an illustrator. Describe a tangible scene with people and objects. For example, for "severance pay", describe "A smiling person receiving a bag of money from a business person in front of an office building." Avoid abstract concepts.
+    b. 'narrative': A simple, one-sentence narrative to be displayed to the user.
+The animation's style must be serious, professional, and directly related to the subject matter.
 
 Topic: {{{topic}}}
 `,
@@ -67,7 +70,7 @@ const topicDiagramDescriptionPrompt = ai.definePrompt({
   output: {schema: TopicDiagramDescriptionSchema},
   prompt: `You are an expert educator and visual designer specializing in simplifying complex topics for students. Your responses must be in Turkish.
 
-Your task is to take a topic and create a detailed description for a visual diagram that explains the key concepts and their relationships. The diagram should be structured like a flowchart or a mind map.
+Your task is to take a topic and create a detailed description for a visual diagram that explains the key concepts and their relationships. This description will be used to generate an SVG. Be very specific about the elements. For example: "Draw a central circle with the text 'Main Idea'. From this circle, draw three arrows pointing to three separate rectangles. Label the first rectangle 'Concept A', the second 'Concept B', and the third 'Concept C'." The diagram should be structured like a flowchart or a mind map.
 
 Topic: {{{topic}}}
 `,
@@ -76,32 +79,31 @@ Topic: {{{topic}}}
 
 // SHARED SVG GENERATION LOGIC
 const generateSvg = async (description: string): Promise<string> => {
-    const designerPrompt = `You are an expert SVG illustrator. Your task is to create a visually appealing, high-quality SVG graphic based on the scene description. The final output must be professional and clear.
+    const designerPrompt = `You are a master illustrator who creates clear, educational, and high-quality SVG graphics. Your style is clean, professional, and easily understandable, similar to visuals used in high-quality educational videos.
 
-**Core Task:**
-- **Clear and Recognizable Illustrations:** Create illustrations where objects are clearly identifiable. A person should look like a person, a house like a house, a car like a car, and a tree like a tree. While the style can be simplified (like flat icons), objects must be recognizable and accurately represent the scene. Avoid overly abstract or purely symbolic representations unless the concept itself is abstract.
-- **High-Quality Vector Art:** The output should be clean, well-structured SVG code. Use modern illustration techniques. The style should be clean and professional, suitable for a presentation or educational material.
-- **Composition:** Pay attention to the composition of the scene to make it balanced and visually engaging.
+**Critically Important Task:**
+Your main goal is to create an illustration that is **instantly recognizable and directly represents the scene description**.
+- **LITERAL INTERPRETATION:** A person must look like a person, a house like a house, a tree like a tree.
+- **NO ABSTRACT ART:** Do NOT use abstract shapes, random geometric forms, or overly symbolic representations unless the concept itself is abstract (e.g., feelings). If the description is about "a contract", draw a person signing a document at a desk, not abstract shapes representing a deal.
+- **FOCUS ON CLARITY:** The illustration must be simple enough to be understood at a glance. Avoid clutter.
 
 **Technical SVG Requirements:**
 - **Self-Contained:** The SVG must be self-contained. No external scripts or assets.
 - **Responsive:** Must use a 'viewBox' attribute to scale correctly.
 - **Transparent Background:** The background must be transparent.
-- **Harmonious Colors:** Use a professional and limited color palette that enhances clarity and fits the mood of the scene.
-- **Readable Text:** If any text is included, it must be clear, legible, and well-integrated into the design.
+- **Harmonious Colors:** Use a professional and limited color palette that fits an educational theme.
+- **Readable Text:** Any text must be clear and well-integrated.
 
 **Output Format:**
-- **SVG Code ONLY:** Your entire response must be ONLY the raw SVG code.
-- Start with \`<svg ...>\` and end with \`</svg>\`.
-- Do NOT include any other text, explanations, or markdown fences like \`\`\`.
+- **SVG Code ONLY:** Your response must be ONLY the raw SVG code, starting with \`<svg ...>\` and ending with \`</svg>\`. Do NOT include any other text, explanations, or markdown fences like \`\`\`.
 
-**Task:** Create a clear, high-quality SVG illustration for the following scene description:
+**Task:** Create a clear, recognizable SVG illustration for the following scene description:
 ${description}`;
 
     const svgGenerationResponse = await ai.generate({ prompt: designerPrompt, model: 'googleai/gemini-1.5-pro-latest' });
     let svgCode = svgGenerationResponse.text;
     const svgMatch = svgCode.match(/<svg[\s\S]*?<\/svg>/s);
-    return svgMatch ? svgMatch[0] : `<svg width="500" height="300" viewBox="0 0 500" xmlns="http://www.w3.org/2000/svg" fill="hsl(var(--card-foreground))"><rect width="100%" height="100%" fill="hsl(var(--muted))" /><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="20px">İçerik oluşturulamadı.</text></svg>`;
+    return svgMatch ? svgMatch[0] : `<svg width="500" height="300" viewBox="0 0 500" xmlns="http://www.w3.org/2000/svg" fill="hsl(var(--card-foreground))"><rect width="100%" height="100%" fill="hsl(var(--muted))" /><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="20px">Görselleştirme başarısız.</text></svg>`;
 };
 
 const toDataUri = (svg: string) => 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64');
@@ -118,7 +120,7 @@ export async function simplifyTopicAsAnimation(input: SimplifyTopicInput): Promi
         return { description: scene.narrative, svgDataUri: toDataUri(svg) };
     } catch (error) {
         console.error(`Failed to generate SVG for scene: ${scene.visualDescription}`, error);
-        const errorSvg = `<svg width="500" height="300" viewBox="0 0 500" xmlns="http://www.w3.org/2000/svg" fill="hsl(var(--card-foreground))"><rect width="100%" height="100%" fill="hsl(var(--muted))" /><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="20px">Sahne oluşturulamadı.</text></svg>`;
+        const errorSvg = `<svg width="500" height="300" viewBox="0 0 500" xmlns="http://www.w3.org/2000/svg" fill="hsl(var(--card-foreground))"><rect width="100%" height="100%" fill="hsl(var(--muted))" /><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="20px">Görselleştirme başarısız.</text></svg>`;
         return { description: scene.narrative, svgDataUri: toDataUri(errorSvg) };
     }
   });
