@@ -12,6 +12,7 @@ import {z} from 'genkit';
 
 const GenerateImageInputSchema = z.object({
   topic: z.string().describe('The topic or summary for which to generate an image.'),
+  style: z.string().optional().default('Fotogerçekçi').describe('The visual style for the image.'),
 });
 export type GenerateImageInput = z.infer<typeof GenerateImageInputSchema>;
 
@@ -26,8 +27,12 @@ const imageGenerationFlow = ai.defineFlow(
     inputSchema: GenerateImageInputSchema,
     outputSchema: GenerateImageOutputSchema,
   },
-  async ({topic}) => {
-    const illustrativePrompt = `Create a high-quality, professional, and visually compelling educational illustration that conceptually represents the following topic. The style should be modern and clean, suitable for a presentation or textbook. Avoid cartoonish elements. Focus on creating a powerful visual metaphor for the core idea.
+  async ({topic, style}) => {
+    const illustrativePrompt = `Create a high-quality, professional, and visually compelling educational illustration that conceptually represents the following topic.
+
+The desired visual style is: **${style}**.
+
+The overall aesthetic should be modern and clean, suitable for a presentation or textbook. Focus on creating a powerful visual metaphor for the core idea.
 
 Topic: ${topic}`;
 

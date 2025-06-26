@@ -31,6 +31,8 @@ import {
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 const formSchema = z.object({
   topic: z
@@ -54,6 +56,8 @@ export function TopicSimplifierForm() {
 
   const [imageLoading, setImageLoading] = useState(false);
   const [imageResult, setImageResult] = useState<GenerateImageOutput | null>(null);
+  const [imageStyle, setImageStyle] = useState('Fotogerçekçi');
+  const imageStyles = ['Fotogerçekçi', 'Dijital Sanat', 'Sulu Boya', 'Çizgi Roman', 'Düşük Poli'];
 
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -109,7 +113,7 @@ export function TopicSimplifierForm() {
     setImageLoading(true);
     setImageResult(null);
     try {
-      const res = await generateIllustrativeImage({ topic: submittedTopic });
+      const res = await generateIllustrativeImage({ topic: submittedTopic, style: imageStyle });
       setImageResult(res);
     } catch (error) {
       console.error(error);
@@ -235,11 +239,19 @@ export function TopicSimplifierForm() {
                     )}
                   </div>
                   <div className="pt-6 border-t">
-                    <h3 className="text-lg font-semibold mb-2 flex items-center gap-2"><ImageIcon /> Kavramsal Görsel</h3>
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><ImageIcon /> Kavramsal Görsel</h3>
                     {!imageResult && !imageLoading && (
                         <div className="flex flex-col items-center text-center gap-4 p-4 border-2 border-dashed rounded-lg">
-                            <p className="text-muted-foreground">Konuyu temsil eden kavramsal bir görsel oluşturun.</p>
-                            <Button onClick={handleGenerateImage} disabled={imageLoading}>
+                            <p className="text-muted-foreground">Konuyu temsil eden kavramsal bir görsel oluşturun. Lütfen bir tarz seçin:</p>
+                             <RadioGroup defaultValue="Fotogerçekçi" value={imageStyle} onValueChange={setImageStyle} className="flex flex-wrap justify-center gap-x-6 gap-y-2 my-2">
+                              {imageStyles.map((style) => (
+                                <div key={style} className="flex items-center space-x-2">
+                                  <RadioGroupItem value={style} id={`ts-style-${style}`} />
+                                  <Label htmlFor={`ts-style-${style}`}>{style}</Label>
+                                </div>
+                              ))}
+                            </RadioGroup>
+                            <Button onClick={handleGenerateImage} disabled={imageLoading} className="mt-2">
                                 <Sparkles className="mr-2 h-4 w-4" /> Görsel Oluştur
                             </Button>
                         </div>

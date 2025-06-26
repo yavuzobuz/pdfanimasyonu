@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { useToast } from '@/hooks/use-toast';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 
 export function PdfAnalyzerForm() {
@@ -23,6 +25,8 @@ export function PdfAnalyzerForm() {
 
   const [imageLoading, setImageLoading] = useState(false);
   const [imageResult, setImageResult] = useState<GenerateImageOutput | null>(null);
+  const [imageStyle, setImageStyle] = useState('Fotogerçekçi');
+  const imageStyles = ['Fotogerçekçi', 'Dijital Sanat', 'Sulu Boya', 'Çizgi Roman', 'Düşük Poli'];
 
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -105,7 +109,7 @@ export function PdfAnalyzerForm() {
     setImageLoading(true);
     setImageResult(null);
     try {
-      const res = await generateIllustrativeImage({ topic: result.summary });
+      const res = await generateIllustrativeImage({ topic: result.summary, style: imageStyle });
       setImageResult(res);
     } catch (error) {
       console.error(error);
@@ -232,11 +236,19 @@ export function PdfAnalyzerForm() {
                     )}
                   </div>
                   <div className="pt-6 border-t">
-                    <h3 className="text-lg font-semibold mb-2 flex items-center gap-2"><ImageIcon /> Kavramsal Görsel</h3>
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><ImageIcon /> Kavramsal Görsel</h3>
                     {!imageResult && !imageLoading && (
                         <div className="flex flex-col items-center text-center gap-4 p-4 border-2 border-dashed rounded-lg">
-                            <p className="text-muted-foreground">PDF özetini temsil eden kavramsal bir görsel oluşturun.</p>
-                            <Button onClick={handleGenerateImage} disabled={imageLoading}>
+                            <p className="text-muted-foreground">PDF özetini temsil eden kavramsal bir görsel oluşturun. Lütfen bir tarz seçin:</p>
+                            <RadioGroup defaultValue="Fotogerçekçi" value={imageStyle} onValueChange={setImageStyle} className="flex flex-wrap justify-center gap-x-6 gap-y-2 my-2">
+                              {imageStyles.map((style) => (
+                                <div key={style} className="flex items-center space-x-2">
+                                  <RadioGroupItem value={style} id={`pdf-style-${style}`} />
+                                  <Label htmlFor={`pdf-style-${style}`}>{style}</Label>
+                                </div>
+                              ))}
+                            </RadioGroup>
+                            <Button onClick={handleGenerateImage} disabled={imageLoading} className="mt-2">
                                 <Sparkles className="mr-2 h-4 w-4" /> Görsel Oluştur
                             </Button>
                         </div>
