@@ -10,11 +10,6 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const SvgValidationSchema = z.object({
-    approved: z.boolean().describe("True if the SVG is high-quality and accurately represents the scene. False otherwise."),
-    feedback: z.string().describe("If not approved, provide concise, actionable feedback for the designer to improve the SVG. Explain WHY it was rejected based on the provided criteria."),
-});
-
 const SimplifyTopicInputSchema = z.object({
   topic: z.string().describe('The complex topic to simplify.'),
 });
@@ -59,7 +54,9 @@ The animation storyboard must be very clear, logically structured, and directly 
 
 For each scene in the animation, you will provide a title (in Turkish), a description of the action in Turkish, and a specific, detailed prompt for an AI model to generate a corresponding **animated SVG** (this prompt must be in English).
 
-The visual style for the animated SVGs should be a professional, visually rich, and detailed educational illustration with a smooth, looping animation. It should be engaging and clear, but not childish or overly simplistic. The drawing must accurately and literally represent the objects and concepts in the scene description.
+The visual style for the animated SVGs should be a professional, visually rich, and detailed educational illustration with a smooth, looping animation. It should be engaging and clear, but not childish or overly simplistic. The drawing must accurately and literally represent the objects and concepts in the scene description. For example, if the prompt mentions a 'person', the SVG must clearly depict a human figure. If it mentions a 'house', it must look like a house. If it mentions a 'courthouse', it must resemble a courthouse building. The drawing must be a faithful visual translation of the text.
+
+Do NOT use raster images (<image> tags) in the SVG. The entire illustration must be composed of vector elements.
 
 Topic: {{{topic}}}
 `,
@@ -78,20 +75,10 @@ const simplifyTopicFlow = ai.defineFlow(
       throw new Error("Failed to generate topic summary and scenario.");
     }
 
-    const MAX_RETRIES = 2;
-
     const scenarioWithAnimations = await Promise.all(
         promptOutput.animationScenario.map(async (scene) => {
           try {
-            let approved = false;
-            let svgCode = '';
-            let attempts = 0;
-            let feedbackHistory = '';
-
-            while (!approved && attempts < MAX_RETRIES) {
-                attempts++;
-                
-                let designerPrompt = `You are a world-class SVG animator and illustrator. Your task is to generate a high-quality, professional, and visually compelling animated SVG.
+            const designerPrompt = `You are a world-class SVG animator and illustrator. Your task is to generate a high-quality, professional, and visually compelling animated SVG.
 
 **Style requirements:**
 - **Animation:** The animation must be a smooth, continuous, and seamless loop.
@@ -115,61 +102,14 @@ const simplifyTopicFlow = ai.defineFlow(
 Create an animated SVG for the following scene:
 ${scene.animatedSvgPrompt}`;
 
-                if (feedbackHistory) {
-                    designerPrompt += `\n\n**IMPORTANT:** Your previous attempt was rejected. You MUST incorporate the following feedback from the art director to improve your design:\n${feedbackHistory}`;
-                }
+            const svgGenerationResponse = await ai.generate({ prompt: designerPrompt });
+            let svgCode = svgGenerationResponse.text;
 
-                const svgGenerationResponse = await ai.generate({ prompt: designerPrompt });
-                
-                let generatedSvg = svgGenerationResponse.text;
-                const svgMatch = generatedSvg.match(/<svg[\s\S]*?<\/svg>/s);
-                if (!svgMatch) {
-                    feedbackHistory += `\n- Attempt ${attempts}: Your output was not valid SVG code. Ensure the output is only raw SVG starting with <svg> and ending with </svg>.`;
-                    if (attempts >= MAX_RETRIES) {
-                      svgCode = "<!-- SVG generation failed after multiple attempts -->";
-                    }
-                    continue;
-                }
-                generatedSvg = svgMatch[0];
-
-                const patronPrompt = `You are a critical art director (Patron). Your role is to review an animated SVG created by a designer based on a scene description. Your standards are exceptionally high.
-
-**Review Criteria:**
-1.  **Relevance & Literalism:** Does the animation accurately and literally represent the scene description? If the description says "a person," does it clearly look like a human figure, not an abstract representation?
-2.  **Quality & Detail:** Is the illustration style professional, detailed, and visually rich? It MUST NOT be made of simple, primitive, or childish geometric shapes (e.g., a stick figure for a person). It should be a modern, high-quality illustration.
-3.  **Technical Validity:** Is it a valid, self-contained, animated SVG that does not contain any raster images (<image> tags)?
-
-**Scene Description:**
-\`\`\`
-${scene.animatedSvgPrompt}
-\`\`\`
-
-**Designer's Submitted SVG Code:**
-\`\`\`xml
-${generatedSvg}
-\`\`\`
-
-**Your Task:**
-Based on the strict criteria above, decide if you approve this SVG. Provide your response in the requested JSON format. If you do not approve, you MUST provide specific, actionable feedback for the designer to address in their next attempt. Be firm and clear.
-`;
-                
-                const { output: validationResult } = await ai.generate({
-                    prompt: patronPrompt,
-                    output: { schema: SvgValidationSchema },
-                });
-
-                if (validationResult?.approved) {
-                    approved = true;
-                    svgCode = generatedSvg;
-                } else {
-                    const feedback = validationResult?.feedback || "The SVG is not satisfactory. Improve quality and relevance based on the initial prompt.";
-                    feedbackHistory += `\n- Attempt ${attempts}: ${feedback}`;
-                    svgCode = generatedSvg; // Keep the last attempt even if it fails
-                }
-            }
-            
-            if (!svgCode) {
-              svgCode = "<!-- SVG generation failed. -->";
+            const svgMatch = svgCode.match(/<svg[\s\S]*?<\/svg>/s);
+            if (svgMatch) {
+                svgCode = svgMatch[0];
+            } else {
+                svgCode = `<svg width="500" height="500" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" fill="hsl(var(--card-foreground))"><rect width="100%" height="100%" fill="hsl(var(--muted))" /><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="20px">Animasyon oluşturulamadı.</text></svg>`;
             }
     
             const svgDataUri = 'data:image/svg+xml;base64,' + Buffer.from(svgCode).toString('base64');
@@ -181,7 +121,7 @@ Based on the strict criteria above, decide if you approve this SVG. Provide your
             };
           } catch (error) {
             console.error(`Error generating animation for scene "${scene.scene}":`, error);
-            const fallbackSvg = `<!-- Animation generation failed for this scene. -->`;
+            const fallbackSvg = `<svg width="500" height="500" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" fill="hsl(var(--card-foreground))"><rect width="100%" height="100%" fill="hsl(var(--muted))" /><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="20px">Animasyon hatası.</text></svg>`;
             const svgDataUri = 'data:image/svg+xml;base64,' + Buffer.from(fallbackSvg).toString('base64');
             return {
               scene: scene.scene,
