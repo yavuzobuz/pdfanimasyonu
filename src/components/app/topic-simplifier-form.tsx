@@ -144,9 +144,6 @@ export function TopicSimplifierForm() {
                                 data-ai-hint="animation scene"
                               />
                             </div>
-                            <div className="w-full text-center pt-4">
-                              <h3 className="font-bold text-xl">{scene.scene}</h3>
-                            </div>
                           </div>
                         </CarouselItem>
                       ))}

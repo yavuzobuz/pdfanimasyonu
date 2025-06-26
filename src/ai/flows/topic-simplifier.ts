@@ -24,7 +24,7 @@ const SimplifyTopicOutputSchema = z.object({
   summary: z.string().describe('A simplified summary of the topic suitable for students, in Turkish.'),
   animationScenario: z.array(
     z.object({
-      scene: z.string().describe("A short title for the animation scene."),
+      scene: z.string().describe("A short title for the animation scene, in Turkish."),
       description: z.string().describe("A detailed description of what happens in this scene, in Turkish."),
       imageDataUri: z.string().describe("The generated image for the scene as a data URI.")
     })
@@ -40,7 +40,7 @@ const SimplifyTopicPromptOutputSchema = z.object({
   summary: z.string().describe('A simplified summary of the topic suitable for students, in Turkish.'),
   animationScenario: z.array(
       z.object({
-          scene: z.string().describe("A short, descriptive title for the scene (e.g., 'Scene 1: The Sun's Energy')."),
+          scene: z.string().describe("A short, descriptive title for the scene in Turkish (e.g., '1. Sahne: Güneşin Enerjisi')."),
           description: z.string().describe("A detailed description of what happens in this scene, focusing on the visual elements, in Turkish."),
           animatedSvgPrompt: z.string().describe("A highly detailed and descriptive prompt in English for an AI that generates professional, visually rich animated SVGs. The prompt should describe a scene that is both educational and aesthetically pleasing, avoiding over-simplification. Focus on clear actions and detailed objects.")
       })
@@ -57,7 +57,7 @@ Your task is to take a topic and break it down into a simplified summary and a m
 
 The animation storyboard must be very clear, logically structured, and directly faithful to the core concepts of the topic. Each scene should build upon the previous one to tell a coherent and easy-to-follow story for a student.
 
-For each scene in the animation, you will provide a title (can be in English), a description of the action in Turkish, and a specific, detailed prompt for an AI model to generate a corresponding **animated SVG** (this prompt must be in English).
+For each scene in the animation, you will provide a title (in Turkish), a description of the action in Turkish, and a specific, detailed prompt for an AI model to generate a corresponding **animated SVG** (this prompt must be in English).
 
 The visual style for the animated SVGs should be a professional, visually rich, and detailed educational illustration with a smooth, looping animation. It should be engaging and clear, but not childish or overly simplistic. The drawing must accurately and literally represent the objects and concepts in the scene description.
 
