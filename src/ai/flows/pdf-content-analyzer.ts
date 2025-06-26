@@ -42,7 +42,7 @@ const PdfContentAnalyzerPromptOutputSchema = z.object({
         z.object({
             scene: z.string().describe("A short, descriptive title for the scene based on PDF content."),
             description: z.string().describe("A detailed description of what happens in this scene, based on the PDF content."),
-            imagePrompt: z.string().describe("A detailed text-to-image prompt to generate a visual for this scene, based on the PDF. The style should be a simple, colorful, flat-design educational illustration.")
+            animatedSvgPrompt: z.string().describe("A detailed prompt for an AI that generates animated SVGs. Describe a simple, looping animation that visually represents the scene using a flat, colorful design style.")
         })
     ).describe('A scene-by-scene breakdown for an animation that explains the key concepts from the PDF. Generate between 3 and 5 scenes.'),
 });
@@ -57,9 +57,9 @@ const pdfContentAnalyzerPrompt = ai.definePrompt({
   1.  A simplified summary of the key concepts.
   2.  A multi-scene animation storyboard to explain these concepts visually.
   
-  For each scene in the storyboard, provide a title, a detailed description of the visuals and action, and a specific prompt for a text-to-image model to generate a corresponding visual.
+  For each scene in the storyboard, provide a title, a detailed description of the visuals and action, and a specific prompt for an AI model to generate a corresponding **animated SVG**.
   
-  The visual style for the images should be a simple, colorful, flat-design educational illustration.
+  The visual style for the animated SVGs should be a simple, colorful, flat-design educational illustration with a looping animation.
   
   PDF Content: {{media url=pdfDataUri}}`,
 });
@@ -77,27 +77,31 @@ const analyzePdfContentFlow = ai.defineFlow(
       throw new Error("Failed to analyze PDF content.");
     }
 
-    const scenarioWithImages = await Promise.all(
+    const scenarioWithAnimations = await Promise.all(
         promptOutput.animationScenario.map(async (scene) => {
-            const { media } = await ai.generate({
-                model: 'googleai/gemini-2.0-flash-preview-image-generation',
-                prompt: scene.imagePrompt,
-                config: {
-                    responseModalities: ['TEXT', 'IMAGE'],
-                },
+            const svgGenerationResponse = await ai.generate({
+                prompt: `You are an expert SVG animator. Create a self-contained, animated SVG using CSS animations. The SVG must not use any external scripts or assets. The animation should be a simple, continuous loop. Make it visually appealing, with a flat design style, and ensure it is responsive by using a viewBox attribute. The color palette should be calming and educational, using primary: #5DADE2, background: #EBF5FB, accent: #F5B041.
+                
+Only output the raw SVG code, starting with <svg> and ending with </svg>. Do not include any other text, explanations, or markdown code fences.
+    
+Create an animated SVG for the following scene:
+${scene.animatedSvgPrompt}`
             });
-
+    
+            const svgCode = svgGenerationResponse.text;
+            const svgDataUri = 'data:image/svg+xml;base64,' + Buffer.from(svgCode).toString('base64');
+    
             return {
                 scene: scene.scene,
                 description: scene.description,
-                imageDataUri: media.url,
+                imageDataUri: svgDataUri,
             };
         })
     );
 
     return {
       summary: promptOutput.summary,
-      animationScenario: scenarioWithImages,
+      animationScenario: scenarioWithAnimations,
     };
   }
 );

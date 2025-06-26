@@ -37,7 +37,7 @@ const SimplifyTopicPromptOutputSchema = z.object({
       z.object({
           scene: z.string().describe("A short, descriptive title for the scene (e.g., 'Scene 1: The Sun's Energy')."),
           description: z.string().describe("A detailed description of what happens in this scene, focusing on the visual elements."),
-          imagePrompt: z.string().describe("A detailed text-to-image prompt to generate a visual for this scene. The style should be a simple, colorful, flat-design educational illustration suitable for children.")
+          animatedSvgPrompt: z.string().describe("A detailed prompt for an AI that generates animated SVGs. Describe a simple, looping animation that visually represents the scene using a flat, colorful design style.")
       })
   ).describe('A scene-by-scene breakdown for an animation that explains the topic. Generate between 3 and 5 scenes.'),
 });
@@ -48,9 +48,9 @@ const simplifyTopicPrompt = ai.definePrompt({
   output: {schema: SimplifyTopicPromptOutputSchema},
   prompt: `You are an expert educator and animator specializing in simplifying complex topics for students.
 
-Your task is to take a topic and break it down into a simplified summary and a multi-scene animation script. For each scene in the animation, you will provide a title, a description of the action, and a specific, detailed prompt for a text-to-image model to generate a corresponding visual.
+Your task is to take a topic and break it down into a simplified summary and a multi-scene animation script. For each scene in the animation, you will provide a title, a description of the action, and a specific, detailed prompt for an AI model to generate a corresponding **animated SVG**.
 
-The visual style should be consistent across all scenes: a simple, colorful, flat-design educational illustration, engaging and easy for students to understand.
+The animated SVG should be a simple, colorful, flat-design educational illustration with a looping animation, engaging and easy for students to understand.
 
 Topic: {{{topic}}}
 `,
@@ -69,27 +69,31 @@ const simplifyTopicFlow = ai.defineFlow(
       throw new Error("Failed to generate topic summary and scenario.");
     }
 
-    const scenarioWithImages = await Promise.all(
+    const scenarioWithAnimations = await Promise.all(
         promptOutput.animationScenario.map(async (scene) => {
-            const { media } = await ai.generate({
-                model: 'googleai/gemini-2.0-flash-preview-image-generation',
-                prompt: scene.imagePrompt,
-                config: {
-                    responseModalities: ['TEXT', 'IMAGE'],
-                },
+            const svgGenerationResponse = await ai.generate({
+                prompt: `You are an expert SVG animator. Create a self-contained, animated SVG using CSS animations. The SVG must not use any external scripts or assets. The animation should be a simple, continuous loop. Make it visually appealing, with a flat design style, and ensure it is responsive by using a viewBox attribute. The color palette should be calming and educational, using primary: #5DADE2, background: #EBF5FB, accent: #F5B041.
+                
+Only output the raw SVG code, starting with <svg> and ending with </svg>. Do not include any other text, explanations, or markdown code fences.
+    
+Create an animated SVG for the following scene:
+${scene.animatedSvgPrompt}`
             });
 
+            const svgCode = svgGenerationResponse.text;
+            const svgDataUri = 'data:image/svg+xml;base64,' + Buffer.from(svgCode).toString('base64');
+    
             return {
                 scene: scene.scene,
                 description: scene.description,
-                imageDataUri: media.url,
+                imageDataUri: svgDataUri,
             };
         })
     );
 
     return {
       summary: promptOutput.summary,
-      animationScenario: scenarioWithImages,
+      animationScenario: scenarioWithAnimations,
     };
   }
 );
