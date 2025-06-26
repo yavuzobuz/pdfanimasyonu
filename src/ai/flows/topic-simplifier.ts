@@ -50,7 +50,7 @@ const simplifyTopicPrompt = ai.definePrompt({
 
 Your task is to take a topic and break it down into a simplified summary and a multi-scene animation script. For each scene in the animation, you will provide a title (can be in English), a description of the action in Turkish, and a specific, detailed prompt for an AI model to generate a corresponding **animated SVG** (this prompt must be in English).
 
-The visual style for the animated SVGs should be a professional, visually rich, and detailed educational illustration with a smooth, looping animation. It should be engaging and clear, but not childish or overly simplistic.
+The visual style for the animated SVGs should be a professional, visually rich, and detailed educational illustration with a smooth, looping animation. It should be engaging and clear, but not childish or overly simplistic. The drawing must accurately and literally represent the objects and concepts in the scene description.
 
 Topic: {{{topic}}}
 `,
@@ -78,11 +78,14 @@ const simplifyTopicFlow = ai.defineFlow(
 - **Animation:** The animation must be a smooth, continuous, and seamless loop.
 - **Self-Contained:** The SVG must be self-contained using CSS animations. No external scripts or assets are allowed.
 - **Aesthetics:** Use a modern, clean, flat-iconography style. The illustration must be detailed and sophisticated.
-- **NO Simple Shapes:** Avoid overly simplistic, abstract, or childish geometric shapes. The output must be a professional-grade illustration that accurately represents the scene.
+- **NO Simple Shapes:** Avoid overly simplistic, abstract, or childish geometric shapes. The output must be a professional-grade illustration.
 - **NO Raster Images:** Do not use \`<image>\` tags or embed any raster graphics (like PNGs or JPEGs) within the SVG. The entire illustration must be composed of vector elements (\`<path>\`, \`<circle>\`, \`<rect>\`, etc.).
 - **Responsive:** The SVG must be responsive and scale correctly by using a 'viewBox' attribute.
 - **Background:** The background must be transparent.
 - **Colors:** Use a harmonious and professional color palette. You have creative freedom.
+
+**Content Requirements:**
+- **Literal Representation:** The generated SVG must accurately and literally represent the objects, characters, and concepts described in the scene prompt. For example, if the prompt mentions a 'person', the SVG must clearly depict a human figure. If it mentions a 'house', it must look like a house. If it mentions a 'courthouse', it must resemble a courthouse building. The drawing must be a faithful visual translation of the text.
 
 **Output format:**
 - Only output the raw SVG code.
