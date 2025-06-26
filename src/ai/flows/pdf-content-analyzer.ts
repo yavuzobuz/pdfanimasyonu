@@ -41,8 +41,7 @@ const PdfContentAnalyzerPromptOutputSchema = z.object({
     animationScenario: z.array(
         z.object({
             scene: z.string().describe("A short, descriptive title for the scene in Turkish, based on PDF content."),
-            description: z.string().describe("A detailed description of what happens in this scene, in Turkish."),
-            animatedSvgPrompt: z.string().describe("A highly detailed and descriptive prompt in English for an AI that generates professional, visually rich animated SVGs. The prompt should describe a scene that is both educational and aesthetically pleasing, avoiding over-simplification. Focus on clear actions and detailed objects.")
+            description: z.string().describe("A detailed description of what happens in this scene, in Turkish. This description will be used to generate an animated SVG."),
         })
     ).describe('A scene-by-scene breakdown for an animation that explains the key concepts from the PDF. Generate between 3 and 5 scenes.'),
 });
@@ -51,7 +50,7 @@ const pdfContentAnalyzerPrompt = ai.definePrompt({
   name: 'pdfContentAnalyzerPrompt',
   input: {schema: AnalyzePdfContentInputSchema},
   output: {schema: PdfContentAnalyzerPromptOutputSchema},
-  prompt: `You are an expert educator and animator skilled at simplifying complex topics from documents. Your responses for summary and description must be in Turkish.
+  prompt: `You are an expert educator and animator skilled at simplifying complex topics from documents. Your responses must be in Turkish.
 
   Analyze the content of the following PDF document. Your task is to create:
   1.  A simplified summary of the key concepts, in Turkish.
@@ -59,11 +58,9 @@ const pdfContentAnalyzerPrompt = ai.definePrompt({
 
   The animation storyboard must be very clear, logically structured, and directly faithful to the key concepts extracted from the PDF. Each scene should build upon the previous one to tell a coherent and easy-to-follow story for a student.
   
-  For each scene in the storyboard, provide a title (in Turkish), a detailed description of the visuals and action in Turkish, and a specific, detailed prompt for an AI model to generate a corresponding **animated SVG** (this prompt must be in English).
-  
-  The visual style for the animated SVGs should be a professional, visually rich, and detailed educational illustration with a smooth, looping animation. It should be engaging and clear, but not childish or overly simplistic. The drawing must accurately and literally represent the objects and concepts in the scene description. For example, if the prompt mentions a 'person', the SVG must clearly depict a human figure. If it mentions a 'house', it must look like a house. If it mentions a 'courthouse', it must resemble a courthouse building. The drawing must be a faithful visual translation of the text.
-  
-  Do NOT use raster images (<image> tags) in the SVG. The entire illustration must be composed of vector elements.
+  For each scene, provide:
+  -   **scene:** A short, descriptive title (in Turkish).
+  -   **description:** A detailed, visually rich description of the scene (in Turkish). This description must be highly descriptive and provide clear instructions on the objects, characters, and actions in the scene, as it will be directly used by an AI to generate an animated SVG. The description must ensure the generated animation is professional, detailed, and literally represents the concepts. For example, if the concept is a legal document about property, the description should include visuals like the property, people involved, and a courthouse scene to represent the legal process. Avoid generic descriptions.
   
   PDF Content: {{media url=pdfDataUri}}`,
 });
@@ -106,7 +103,7 @@ const analyzePdfContentFlow = ai.defineFlow(
 
 **Task:**
 Create an animated SVG for the following scene:
-${scene.animatedSvgPrompt}`;
+${scene.description}`;
 
             const svgGenerationResponse = await ai.generate({ prompt: designerPrompt });
             let svgCode = svgGenerationResponse.text;

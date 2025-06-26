@@ -36,8 +36,7 @@ const SimplifyTopicPromptOutputSchema = z.object({
   animationScenario: z.array(
       z.object({
           scene: z.string().describe("A short, descriptive title for the scene in Turkish (e.g., '1. Sahne: Güneşin Enerjisi')."),
-          description: z.string().describe("A detailed description of what happens in this scene, focusing on the visual elements, in Turkish."),
-          animatedSvgPrompt: z.string().describe("A highly detailed and descriptive prompt in English for an AI that generates professional, visually rich animated SVGs. The prompt should describe a scene that is both educational and aesthetically pleasing, avoiding over-simplification. Focus on clear actions and detailed objects.")
+          description: z.string().describe("A detailed description of what happens in this scene, focusing on the visual elements, in Turkish. This description will be used to generate an animated SVG."),
       })
   ).describe('A scene-by-scene breakdown for an animation that explains the topic. Generate between 3 and 5 scenes.'),
 });
@@ -46,17 +45,17 @@ const simplifyTopicPrompt = ai.definePrompt({
   name: 'simplifyTopicPrompt',
   input: {schema: SimplifyTopicInputSchema},
   output: {schema: SimplifyTopicPromptOutputSchema},
-  prompt: `You are an expert educator and animator specializing in simplifying complex topics for students. Your responses for summary and description must be in Turkish.
+  prompt: `You are an expert educator and animator specializing in simplifying complex topics for students. Your responses must be in Turkish.
 
-Your task is to take a topic and break it down into a simplified summary and a multi-scene animation script. 
+Your task is to take a topic and break it down into:
+1.  A simplified summary suitable for students.
+2.  A multi-scene animation storyboard to explain the topic visually.
 
 The animation storyboard must be very clear, logically structured, and directly faithful to the core concepts of the topic. Each scene should build upon the previous one to tell a coherent and easy-to-follow story for a student.
 
-For each scene in the animation, you will provide a title (in Turkish), a description of the action in Turkish, and a specific, detailed prompt for an AI model to generate a corresponding **animated SVG** (this prompt must be in English).
-
-The visual style for the animated SVGs should be a professional, visually rich, and detailed educational illustration with a smooth, looping animation. It should be engaging and clear, but not childish or overly simplistic. The drawing must accurately and literally represent the objects and concepts in the scene description. For example, if the prompt mentions a 'person', the SVG must clearly depict a human figure. If it mentions a 'house', it must look like a house. If it mentions a 'courthouse', it must resemble a courthouse building. The drawing must be a faithful visual translation of the text.
-
-Do NOT use raster images (<image> tags) in the SVG. The entire illustration must be composed of vector elements.
+For each scene, provide:
+-   **scene:** A short, descriptive title (in Turkish).
+-   **description:** A detailed, visually rich description of the scene (in Turkish). This description must be highly descriptive and provide clear instructions on the objects, characters, and actions in the scene, as it will be directly used by an AI to generate an animated SVG. The description must ensure the generated animation is professional, detailed, and literally represents the concepts. For example, if the concept is "izaleyi şüyu davası", the description should include visuals like a shared property (like land or a building), disagreeing co-owners, and a courthouse scene to represent the legal process. Avoid generic descriptions.
 
 Topic: {{{topic}}}
 `,
@@ -100,7 +99,7 @@ const simplifyTopicFlow = ai.defineFlow(
 
 **Task:**
 Create an animated SVG for the following scene:
-${scene.animatedSvgPrompt}`;
+${scene.description}`;
 
             const svgGenerationResponse = await ai.generate({ prompt: designerPrompt });
             let svgCode = svgGenerationResponse.text;
