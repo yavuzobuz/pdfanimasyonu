@@ -5,7 +5,6 @@ import type { SimplifyTopicOutput } from '@/ai/flows/topic-simplifier';
 import { simplifyTopic } from '@/ai/flows/topic-simplifier';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Sparkles, Wand2, FileText, PlayCircle } from 'lucide-react';
-import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -154,12 +153,11 @@ export function TopicSimplifierForm() {
                         <div className="p-1">
                           <Card>
                             <CardContent className="flex flex-col md:flex-row items-center justify-center p-6 gap-6">
-                              <div className="md:w-1/2 w-full aspect-video relative rounded-lg overflow-hidden">
-                                <Image
+                              <div className="md:w-1/2 w-full aspect-video relative rounded-lg overflow-hidden bg-muted/30">
+                                <img
                                   src={scene.imageDataUri}
                                   alt={scene.scene}
-                                  fill
-                                  className="object-cover"
+                                  className="w-full h-full object-contain"
                                   data-ai-hint="animation scene"
                                 />
                               </div>

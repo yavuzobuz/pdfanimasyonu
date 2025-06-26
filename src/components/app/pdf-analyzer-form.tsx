@@ -3,7 +3,6 @@
 import { useState, type ChangeEvent } from 'react';
 import { analyzePdfContent, type AnalyzePdfContentOutput } from '@/ai/flows/pdf-content-analyzer';
 import { FileUp, Loader2, Sparkles, UploadCloud, X, FileText, PlayCircle } from 'lucide-react';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -157,12 +156,11 @@ export function PdfAnalyzerForm() {
                           <div className="p-1">
                             <Card>
                               <CardContent className="flex flex-col md:flex-row items-center justify-center p-6 gap-6">
-                                <div className="md:w-1/2 w-full aspect-video relative rounded-lg overflow-hidden">
-                                  <Image
+                                <div className="md:w-1/2 w-full aspect-video relative rounded-lg overflow-hidden bg-muted/30">
+                                  <img
                                     src={scene.imageDataUri}
                                     alt={scene.scene}
-                                    fill
-                                    className="object-cover"
+                                    className="w-full h-full object-contain"
                                     data-ai-hint="animation scene"
                                   />
                                 </div>
