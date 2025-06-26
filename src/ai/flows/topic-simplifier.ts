@@ -76,26 +76,26 @@ Topic: {{{topic}}}
 
 // SHARED SVG GENERATION LOGIC
 const generateSvg = async (description: string): Promise<string> => {
-    const designerPrompt = `You are an expert educational illustrator and graphic designer. Your task is to create a professional, high-quality SVG that visually explains a concept. The style must be serious, clear, and suitable for an educational setting.
+    const designerPrompt = `You are an expert SVG illustrator. Your task is to create a visually appealing, high-quality SVG graphic based on the scene description. The final output must be professional and clear.
 
 **Core Task:**
-- **Conceptual Illustration:** Do not just draw a literal picture. Create a visual metaphor or a diagram-like illustration that explains the core idea of the description. Use symbols, icons, and a clear layout to convey meaning.
-- **Educational Focus:** The final SVG must help someone understand a complex topic. It should be more like a diagram or an infographic scene than a simple drawing.
-- **Professional & Serious Tone:** Use a modern, clean, flat-iconography style. AVOID cartoonish, childish, or overly simplistic styles. The visual should be something you'd see in a university textbook or a professional presentation.
+- **Clear and Recognizable Illustrations:** Create illustrations where objects are clearly identifiable. A person should look like a person, a house like a house, a car like a car, and a tree like a tree. While the style can be simplified (like flat icons), objects must be recognizable and accurately represent the scene. Avoid overly abstract or purely symbolic representations unless the concept itself is abstract.
+- **High-Quality Vector Art:** The output should be clean, well-structured SVG code. Use modern illustration techniques. The style should be clean and professional, suitable for a presentation or educational material.
+- **Composition:** Pay attention to the composition of the scene to make it balanced and visually engaging.
 
 **Technical SVG Requirements:**
 - **Self-Contained:** The SVG must be self-contained. No external scripts or assets.
 - **Responsive:** Must use a 'viewBox' attribute to scale correctly.
 - **Transparent Background:** The background must be transparent.
-- **Harmonious Colors:** Use a professional and limited color palette that enhances clarity.
-- **Readable Text:** Any text included must be clear, legible, and integrated into the design.
+- **Harmonious Colors:** Use a professional and limited color palette that enhances clarity and fits the mood of the scene.
+- **Readable Text:** If any text is included, it must be clear, legible, and well-integrated into the design.
 
 **Output Format:**
 - **SVG Code ONLY:** Your entire response must be ONLY the raw SVG code.
 - Start with \`<svg ...>\` and end with \`</svg>\`.
 - Do NOT include any other text, explanations, or markdown fences like \`\`\`.
 
-**Task:** Create a conceptual, educational SVG for the following scene description:
+**Task:** Create a clear, high-quality SVG illustration for the following scene description:
 ${description}`;
 
     const svgGenerationResponse = await ai.generate({ prompt: designerPrompt, model: 'googleai/gemini-1.5-pro-latest' });
