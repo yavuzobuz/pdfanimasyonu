@@ -79,6 +79,7 @@ const simplifyTopicFlow = ai.defineFlow(
 - **Self-Contained:** The SVG must be self-contained using CSS animations. No external scripts or assets are allowed.
 - **Aesthetics:** Use a modern, clean, flat-iconography style. The illustration must be detailed and sophisticated.
 - **NO Simple Shapes:** Avoid overly simplistic, abstract, or childish geometric shapes. The output must be a professional-grade illustration that accurately represents the scene.
+- **NO Raster Images:** Do not use \`<image>\` tags or embed any raster graphics (like PNGs or JPEGs) within the SVG. The entire illustration must be composed of vector elements (\`<path>\`, \`<circle>\`, \`<rect>\`, etc.).
 - **Responsive:** The SVG must be responsive and scale correctly by using a 'viewBox' attribute.
 - **Background:** The background must be transparent.
 - **Colors:** Use a harmonious and professional color palette. You have creative freedom.
