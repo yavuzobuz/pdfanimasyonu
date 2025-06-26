@@ -78,6 +78,7 @@ const simplifyTopicFlow = ai.defineFlow(
 
     const scenarioWithAnimations = await Promise.all(
         promptOutput.animationScenario.map(async (scene) => {
+          try {
             let approved = false;
             let svgCode = '';
             let attempts = 0;
@@ -174,6 +175,16 @@ Based on the strict criteria above, decide if you approve this SVG. Provide your
                 description: scene.description,
                 imageDataUri: svgDataUri,
             };
+          } catch (error) {
+            console.error(`Error generating animation for scene "${scene.scene}":`, error);
+            const fallbackSvg = `<!-- Animation generation failed for this scene. -->`;
+            const svgDataUri = 'data:image/svg+xml;base64,' + Buffer.from(fallbackSvg).toString('base64');
+            return {
+              scene: scene.scene,
+              description: "Bu sahne için animasyon oluşturulurken bir hata oluştu.",
+              imageDataUri: svgDataUri,
+            };
+          }
         })
     );
 
