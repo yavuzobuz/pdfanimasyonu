@@ -83,9 +83,10 @@ const generateSvg = async (description: string): Promise<string> => {
 
 **Critically Important Task:**
 Your main goal is to create an illustration that is **instantly recognizable and directly represents the scene description**.
-- **LITERAL INTERPRETATION:** A person must look like a person, a house like a house, a tree like a tree.
-- **NO ABSTRACT ART:** Do NOT use abstract shapes, random geometric forms, or overly symbolic representations unless the concept itself is abstract (e.g., feelings). If the description is about "a contract", draw a person signing a document at a desk, not abstract shapes representing a deal.
-- **FOCUS ON CLARITY:** The illustration must be simple enough to be understood at a glance. Avoid clutter.
+- **LITERAL INTERPRETATION:** A person must look like a person, a house like a house, a tree like a tree. The drawing must be literal and concrete.
+- **NO ABSTRACT ART:** Do NOT use abstract shapes, random geometric forms, or overly symbolic representations. Every element must be a recognizable object. If the description is about "a contract", draw a person signing a document at a desk, not abstract shapes representing a deal.
+- **FOCUS ON CLARITY:** The illustration must be simple enough to be understood at a glance. Avoid clutter. Use fills and strokes to create solid, recognizable objects, not just wireframes.
+- **HIGH-FIDELITY STYLE:** The style should be clean, modern, and high-fidelity, like icons you would see on a major tech company's website.
 
 **Technical SVG Requirements:**
 - **Self-Contained:** The SVG must be self-contained. No external scripts or assets.
@@ -97,7 +98,7 @@ Your main goal is to create an illustration that is **instantly recognizable and
 **Output Format:**
 - **SVG Code ONLY:** Your response must be ONLY the raw SVG code, starting with \`<svg ...>\` and ending with \`</svg>\`. Do NOT include any other text, explanations, or markdown fences like \`\`\`.
 
-**Task:** Create a clear, recognizable SVG illustration for the following scene description:
+**Task:** Create a clear, recognizable, high-fidelity SVG illustration for the following scene description:
 ${description}`;
 
     const svgGenerationResponse = await ai.generate({ prompt: designerPrompt, model: 'googleai/gemini-1.5-pro-latest' });
