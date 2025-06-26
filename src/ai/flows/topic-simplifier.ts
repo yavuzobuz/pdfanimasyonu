@@ -79,26 +79,25 @@ Topic: {{{topic}}}
 
 // SHARED SVG GENERATION LOGIC
 const generateSvg = async (description: string): Promise<string> => {
-    const designerPrompt = `You are a master illustrator who creates clear, educational, and high-quality SVG graphics. Your style is clean, professional, and easily understandable, similar to visuals used in high-quality educational videos.
+    const designerPrompt = `You are an expert in creating visual aids and educational graphics. Your task is to design a high-quality SVG illustration that is not just a picture, but an **educational diagram** that clearly explains the given scene.
 
-**Critically Important Task:**
-Your main goal is to create an illustration that is **instantly recognizable and directly represents the scene description**.
-- **LITERAL INTERPRETATION:** A person must look like a person, a house like a house, a tree like a tree. The drawing must be literal and concrete.
-- **NO ABSTRACT ART:** Do NOT use abstract shapes, random geometric forms, or overly symbolic representations. Every element must be a recognizable object. If the description is about "a contract", draw a person signing a document at a desk, not abstract shapes representing a deal.
-- **FOCUS ON CLARITY:** The illustration must be simple enough to be understood at a glance. Avoid clutter. Use fills and strokes to create solid, recognizable objects, not just wireframes.
-- **HIGH-FIDELITY STYLE:** The style should be clean, modern, and high-fidelity, like icons you would see on a major tech company's website.
+**Core Mission: Explain, Don't Just Decorate.**
+- **Clarity is King:** The visual must be instantly understandable and teach the core concept of the scene.
+- **Use Diagrammatic Elements:** Incorporate labels, arrows, simplified icons, and flow-chart-like elements to show processes, relationships, and key information. The visual should feel like a slide from a high-quality educational video.
+- **Literal and Recognizable:** All elements must be concrete and recognizable. A sun should look like a sun, a cell like a cell. Avoid overly abstract or artistic interpretations. The style should be clean, professional, and modern.
+- **Example:** If the scene is "Sunlight gives energy to the plant", don't just draw a sun and a plant. Draw the sun with arrows pointing towards the plant, perhaps with a label like "Energy" on the arrows. The plant could have a subtle glow to indicate it's receiving the energy.
 
 **Technical SVG Requirements:**
 - **Self-Contained:** The SVG must be self-contained. No external scripts or assets.
 - **Responsive:** Must use a 'viewBox' attribute to scale correctly.
 - **Transparent Background:** The background must be transparent.
-- **Harmonious Colors:** Use a professional and limited color palette that fits an educational theme.
-- **Readable Text:** Any text must be clear and well-integrated.
+- **Harmonious Colors:** Use a professional and limited color palette that fits an educational theme. Use colors purposefully to highlight key information.
+- **Readable Text:** Any text (labels) must be clear, well-integrated, and use a standard sans-serif font.
 
 **Output Format:**
 - **SVG Code ONLY:** Your response must be ONLY the raw SVG code, starting with \`<svg ...>\` and ending with \`</svg>\`. Do NOT include any other text, explanations, or markdown fences like \`\`\`.
 
-**Task:** Create a clear, recognizable, high-fidelity SVG illustration for the following scene description:
+**Task:** Create a clear, educational, and diagrammatic SVG illustration for the following scene description:
 ${description}`;
 
     const svgGenerationResponse = await ai.generate({ prompt: designerPrompt, model: 'googleai/gemini-1.5-pro-latest' });
