@@ -5,6 +5,7 @@ import type { SimplifyTopicOutput } from '@/ai/flows/topic-simplifier';
 import { simplifyTopic } from '@/ai/flows/topic-simplifier';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Sparkles, Wand2, FileText, PlayCircle } from 'lucide-react';
+import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -16,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import {
   Form,
   FormControl,
@@ -116,36 +118,66 @@ export function TopicSimplifierForm() {
 
         {loading && (
           <div className="mt-6 text-center text-muted-foreground">
-            <p>AI is thinking... this may take a moment.</p>
+            <p>AI is thinking and creating a storyboard... this may take a moment.</p>
           </div>
         )}
 
         {result && (
           <div className="mt-8 space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText />
-                    Simplified Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-foreground/80">{result.summary}</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <PlayCircle />
-                    Animation Scenario
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-foreground/80 whitespace-pre-wrap">{result.animationScenario}</p>
-                </CardContent>
-              </Card>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText />
+                  Simplified Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-foreground/80">{result.summary}</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PlayCircle />
+                  Animation Storyboard
+                </CardTitle>
+                <CardDescription>
+                    Here is a scene-by-scene storyboard for your animation.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Carousel className="w-full">
+                  <CarouselContent>
+                    {result.animationScenario.map((scene, index) => (
+                      <CarouselItem key={index}>
+                        <div className="p-1">
+                          <Card>
+                            <CardContent className="flex flex-col md:flex-row items-center justify-center p-6 gap-6">
+                              <div className="md:w-1/2 w-full aspect-video relative rounded-lg overflow-hidden">
+                                <Image
+                                  src={scene.imageDataUri}
+                                  alt={scene.scene}
+                                  fill
+                                  className="object-cover"
+                                  data-ai-hint="animation scene"
+                                />
+                              </div>
+                              <div className="md:w-1/2 w-full space-y-2">
+                                <h3 className="font-bold text-lg">{scene.scene}</h3>
+                                <p className="text-sm text-muted-foreground">{scene.description}</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="hidden sm:flex" />
+                  <CarouselNext className="hidden sm:flex" />
+                </Carousel>
+              </CardContent>
+            </Card>
           </div>
         )}
       </CardContent>
