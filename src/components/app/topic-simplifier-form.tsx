@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { SimplifyTopicOutput } from '@/ai/flows/topic-simplifier';
 import { simplifyTopic } from '@/ai/flows/topic-simplifier';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Sparkles, Wand2, FileText, PlayCircle } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, FileText, Network } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -16,7 +16,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import {
   Form,
   FormControl,
@@ -77,7 +76,7 @@ export function TopicSimplifierForm() {
           Topic Simplifier
         </CardTitle>
         <CardDescription>
-          Enter a complex topic, and our AI will generate a simplified summary and an animation scenario to explain it.
+          Enter a complex topic, and our AI will generate a simplified summary and a diagram to explain it.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -108,7 +107,7 @@ export function TopicSimplifierForm() {
               ) : (
                 <>
                   <Sparkles className="mr-2 h-4 w-4" />
-                  Generate Animation
+                  Generate Diagram
                 </>
               )}
             </Button>
@@ -117,7 +116,7 @@ export function TopicSimplifierForm() {
 
         {loading && (
           <div className="mt-6 text-center text-muted-foreground">
-            <p>AI is thinking and creating a storyboard... this may take a moment.</p>
+            <p>AI is thinking and creating a diagram... this may take a moment.</p>
           </div>
         )}
 
@@ -126,36 +125,26 @@ export function TopicSimplifierForm() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <PlayCircle />
-                  Animasyonlu Açıklama
+                  <Network />
+                  Açıklayıcı Diyagram
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                  <Carousel className="w-full" opts={{ loop: true }}>
-                    <CarouselContent>
-                      {result.animationScenario.map((scene, index) => (
-                        <CarouselItem key={index}>
-                           <div className="p-1">
-                            <div className="w-full h-[480px] relative rounded-lg overflow-hidden bg-background shadow-inner">
-                              <img
-                                src={scene.imageDataUri}
-                                alt={scene.scene}
-                                className="w-full h-full object-contain"
-                                data-ai-hint="animation scene"
-                              />
-                            </div>
-                          </div>
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                    <CarouselPrevious className="hidden sm:flex" />
-                    <CarouselNext className="hidden sm:flex" />
-                  </Carousel>
+                  <div className="w-full p-1">
+                    <div className="w-full relative rounded-lg overflow-hidden bg-background shadow-inner border">
+                      <img
+                        src={result.diagramDataUri}
+                        alt="Açıklayıcı diyagram"
+                        className="w-full h-auto object-contain"
+                        data-ai-hint="diagram flowchart"
+                      />
+                    </div>
+                  </div>
 
                   <div className="mt-6 pt-6 border-t">
                     <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
                       <FileText />
-                      Konu Açıklaması
+                      Konu Özeti
                     </h3>
                     <p className="text-sm text-muted-foreground">{result.summary}</p>
                   </div>

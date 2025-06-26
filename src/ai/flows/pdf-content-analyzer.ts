@@ -1,9 +1,9 @@
 'use server';
 
 /**
- * @fileOverview This flow analyzes PDF content to extract key concepts and create a simplified summary and visual storyboard.
+ * @fileOverview This flow analyzes PDF content to extract key concepts and create a simplified summary and a visual diagram.
  *
- * - analyzePdfContent - A function that handles the PDF content analysis and summarization process.
+ * - analyzePdfContent - A function that handles the PDF content analysis and diagram generation process.
  * - AnalyzePdfContentInput - The input type for the analyzePdfContent function.
  * - AnalyzePdfContentOutput - The return type for the analyzePdfContent function.
  */
@@ -22,13 +22,7 @@ export type AnalyzePdfContentInput = z.infer<typeof AnalyzePdfContentInputSchema
 
 const AnalyzePdfContentOutputSchema = z.object({
   summary: z.string().describe('A simplified summary of the PDF content, in Turkish.'),
-  animationScenario: z.array(
-    z.object({
-      scene: z.string().describe("A short title for the animation scene, in Turkish."),
-      description: z.string().describe("A detailed description of what happens in this scene, in Turkish."),
-      imageDataUri: z.string().describe("The generated image for the scene as a data URI.")
-    })
-  ).describe('A scene-by-scene breakdown for an animation that explains the PDF content, complete with generated visuals.'),
+  diagramDataUri: z.string().describe("A diagram explaining the PDF content, as an SVG data URI."),
 });
 export type AnalyzePdfContentOutput = z.infer<typeof AnalyzePdfContentOutputSchema>;
 
@@ -38,30 +32,19 @@ export async function analyzePdfContent(input: AnalyzePdfContentInput): Promise<
 
 const PdfContentAnalyzerPromptOutputSchema = z.object({
     summary: z.string().describe('A simplified summary of the PDF content in Turkish.'),
-    animationScenario: z.array(
-        z.object({
-            scene: z.string().describe("A short, descriptive title for the scene in Turkish, based on PDF content."),
-            description: z.string().describe("A detailed description of what happens in this scene, in Turkish. This description will be used to generate an animated SVG."),
-        })
-    ).describe('A scene-by-scene breakdown for an animation that explains the key concepts from the PDF. Generate between 3 and 5 scenes.'),
+    diagramDescription: z.string().describe("A detailed description of a diagram (flowchart, mind map, etc.) that explains the key concepts from the PDF and their relationships, in Turkish. This description will be used to generate an SVG diagram."),
 });
 
 const pdfContentAnalyzerPrompt = ai.definePrompt({
   name: 'pdfContentAnalyzerPrompt',
   input: {schema: AnalyzePdfContentInputSchema},
   output: {schema: PdfContentAnalyzerPromptOutputSchema},
-  prompt: `You are an expert educator and animator skilled at simplifying complex topics from documents. Your responses must be in Turkish. The overall tone must be serious, professional, and educational.
+  prompt: `You are an expert educator and visual designer skilled at simplifying complex topics from documents. Your responses must be in Turkish.
 
   Analyze the content of the following PDF document. Your task is to create:
   1.  A simplified summary of the key concepts, in Turkish.
-  2.  A multi-scene animation storyboard to explain these concepts visually.
+  2.  A detailed description for a visual diagram (like a flowchart or mind map) that explains these concepts and their relationships. This description must be very clear and provide instructions on the shapes, text, and connections needed.
 
-  The animation storyboard must be very clear, logically structured, and directly faithful to the key concepts extracted from the PDF. The goal is to create an educational tool, not entertainment. Each scene should build upon the previous one to tell a coherent and easy-to-follow story for a student.
-  
-  For each scene, provide:
-  -   **scene:** A short, descriptive title (in Turkish).
-  -   **description:** A detailed, visually rich description of the scene (in Turkish). This description must be highly descriptive and provide clear instructions on the objects, characters, and actions in the scene, as it will be directly used by an AI to generate an animated SVG. The description must ensure the generated animation is professional, detailed, and literally represents the concepts. For example, if the concept is a legal document about property, the description should include visuals like the property, people involved, and a courthouse scene to represent the legal process. Avoid generic descriptions.
-  
   PDF Content: {{media url=pdfDataUri}}`,
 });
 
@@ -78,25 +61,18 @@ const analyzePdfContentFlow = ai.defineFlow(
       throw new Error("Failed to analyze PDF content.");
     }
     
-    const scenarioWithAnimations = await Promise.all(
-        promptOutput.animationScenario.map(async (scene) => {
-          try {
-            const designerPrompt = `You are a world-class SVG animator and illustrator. Your task is to generate a high-quality, professional, and visually compelling animated SVG suitable for an educational context.
-
-**Tone:** The style must be serious, informative, and professional. Avoid cartoonish, whimsical, or overly playful elements. The final output should look like a premium educational animation.
+    const designerPrompt = `You are a world-class diagram illustrator. Your task is to generate a high-quality, professional, and visually compelling SVG diagram suitable for an educational context.
 
 **Style requirements:**
-- **Animation:** The animation must be a smooth, continuous, and seamless loop.
-- **Self-Contained:** The SVG must be self-contained using CSS animations. No external scripts or assets are allowed.
+- **Clarity and Readability:** The diagram must be easy to read and understand. Use clear fonts and a logical layout.
+- **Self-Contained:** The SVG must be self-contained. No external scripts or assets.
 - **Aesthetics:** Use a modern, clean, flat-iconography style. The illustration must be detailed and sophisticated.
-- **NO Simple Shapes:** Avoid overly simplistic, abstract, or childish geometric shapes. The output must be a professional-grade illustration.
-- **NO Raster Images:** Do not use \`<image>\` tags or embed any raster graphics (like PNGs or JPEGs) within the SVG. The entire illustration must be composed of vector elements (\`<path>\`, \`<circle>\`, \`<rect>\`, etc.).
 - **Responsive:** The SVG must be responsive and scale correctly by using a 'viewBox' attribute.
 - **Background:** The background must be transparent.
-- **Colors:** Use a harmonious and professional color palette. You have creative freedom.
+- **Colors:** Use a harmonious and professional color palette.
 
 **Content Requirements:**
-- **Literal Representation:** The generated SVG must accurately and literally represent the objects, characters, and concepts described in the scene prompt. For example, if the prompt mentions a 'person', the SVG must clearly depict a human figure. If it mentions a 'house', it must look like a house. If it mentions a 'courthouse', it must resemble a courthouse building. The drawing must be a faithful visual translation of the text.
+- The generated SVG must accurately represent the concepts and relationships described in the diagram prompt. Use text labels, shapes (rectangles, circles, diamonds), and connecting arrows to build the diagram.
 
 **Output format:**
 - Only output the raw SVG code.
@@ -104,42 +80,24 @@ const analyzePdfContentFlow = ai.defineFlow(
 - Do NOT include any other text, explanations, or markdown code fences like \`\`\`.
 
 **Task:**
-Create an animated SVG for the following scene:
-${scene.description}`;
+Create an SVG diagram for the following description:
+${promptOutput.diagramDescription}`;
 
-            const svgGenerationResponse = await ai.generate({ prompt: designerPrompt });
-            let svgCode = svgGenerationResponse.text;
+    const svgGenerationResponse = await ai.generate({ prompt: designerPrompt });
+    let svgCode = svgGenerationResponse.text;
 
-            const svgMatch = svgCode.match(/<svg[\s\S]*?<\/svg>/s);
-            if (svgMatch) {
-                svgCode = svgMatch[0];
-            } else {
-                svgCode = `<svg width="500" height="500" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" fill="hsl(var(--card-foreground))"><rect width="100%" height="100%" fill="hsl(var(--muted))" /><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="20px">Animasyon oluşturulamadı.</text></svg>`;
-            }
-    
-            const svgDataUri = 'data:image/svg+xml;base64,' + Buffer.from(svgCode).toString('base64');
-    
-            return {
-                scene: scene.scene,
-                description: scene.description,
-                imageDataUri: svgDataUri,
-            };
-          } catch (error) {
-            console.error(`Error generating animation for scene "${scene.scene}":`, error);
-            const fallbackSvg = `<svg width="500" height="500" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" fill="hsl(var(--card-foreground))"><rect width="100%" height="100%" fill="hsl(var(--muted))" /><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="20px">Animasyon hatası.</text></svg>`;
-            const svgDataUri = 'data:image/svg+xml;base64,' + Buffer.from(fallbackSvg).toString('base64');
-            return {
-              scene: scene.scene,
-              description: "Bu sahne için animasyon oluşturulurken bir hata oluştu.",
-              imageDataUri: svgDataUri,
-            };
-          }
-        })
-    );
+    const svgMatch = svgCode.match(/<svg[\s\S]*?<\/svg>/s);
+    if (svgMatch) {
+        svgCode = svgMatch[0];
+    } else {
+        svgCode = `<svg width="500" height="300" viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg" fill="hsl(var(--card-foreground))"><rect width="100%" height="100%" fill="hsl(var(--muted))" /><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="20px">Diyagram oluşturulamadı.</text></svg>`;
+    }
+
+    const diagramDataUri = 'data:image/svg+xml;base64,' + Buffer.from(svgCode).toString('base64');
 
     return {
       summary: promptOutput.summary,
-      animationScenario: scenarioWithAnimations,
+      diagramDataUri: diagramDataUri,
     };
   }
 );

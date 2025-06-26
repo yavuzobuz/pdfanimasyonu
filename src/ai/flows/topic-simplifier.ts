@@ -17,13 +17,7 @@ export type SimplifyTopicInput = z.infer<typeof SimplifyTopicInputSchema>;
 
 const SimplifyTopicOutputSchema = z.object({
   summary: z.string().describe('A simplified summary of the topic suitable for students, in Turkish.'),
-  animationScenario: z.array(
-    z.object({
-      scene: z.string().describe("A short title for the animation scene, in Turkish."),
-      description: z.string().describe("A detailed description of what happens in this scene, in Turkish."),
-      imageDataUri: z.string().describe("The generated image for the scene as a data URI.")
-    })
-  ).describe('A scene-by-scene breakdown for an animation that explains the topic, complete with generated visuals.'),
+  diagramDataUri: z.string().describe("A diagram explaining the topic, as an SVG data URI.")
 });
 export type SimplifyTopicOutput = z.infer<typeof SimplifyTopicOutputSchema>;
 
@@ -33,29 +27,18 @@ export async function simplifyTopic(input: SimplifyTopicInput): Promise<Simplify
 
 const SimplifyTopicPromptOutputSchema = z.object({
   summary: z.string().describe('A simplified summary of the topic suitable for students, in Turkish.'),
-  animationScenario: z.array(
-      z.object({
-          scene: z.string().describe("A short, descriptive title for the scene in Turkish (e.g., '1. Sahne: Güneşin Enerjisi')."),
-          description: z.string().describe("A detailed description of what happens in this scene, focusing on the visual elements, in Turkish. This description will be used to generate an animated SVG."),
-      })
-  ).describe('A scene-by-scene breakdown for an animation that explains the topic. Generate between 3 and 5 scenes.'),
+  diagramDescription: z.string().describe("A detailed description of a diagram (flowchart, mind map, etc.) that explains the topic visually, in Turkish. This description will be used to generate an SVG diagram."),
 });
 
 const simplifyTopicPrompt = ai.definePrompt({
   name: 'simplifyTopicPrompt',
   input: {schema: SimplifyTopicInputSchema},
   output: {schema: SimplifyTopicPromptOutputSchema},
-  prompt: `You are an expert educator and animator specializing in simplifying complex topics for students. Your responses must be in Turkish. The overall tone must be serious, professional, and educational.
+  prompt: `You are an expert educator and visual designer specializing in simplifying complex topics for students. Your responses must be in Turkish.
 
-Your task is to take a topic and break it down into:
+Your task is to take a topic and create:
 1.  A simplified summary suitable for students.
-2.  A multi-scene animation storyboard to explain the topic visually.
-
-The animation storyboard must be very clear, logically structured, and directly faithful to the core concepts of the topic. The goal is to create an educational tool, not entertainment. Each scene should build upon the previous one to tell a coherent and easy-to-follow story for a student.
-
-For each scene, provide:
--   **scene:** A short, descriptive title (in Turkish).
--   **description:** A detailed, visually rich description of the scene (in Turkish). This description must be highly descriptive and provide clear instructions on the objects, characters, and actions in the scene, as it will be directly used by an AI to generate an animated SVG. The description must ensure the generated animation is professional, detailed, and literally represents the concepts. For example, if the concept is "izaleyi şüyu davası", the description should include visuals like a shared property (like land or a building), disagreeing co-owners, and a courthouse scene to represent the legal process. Avoid generic descriptions.
+2.  A detailed description for a visual diagram that explains the key concepts and their relationships. The diagram should be structured like a flowchart or a mind map.
 
 Topic: {{{topic}}}
 `,
@@ -71,28 +54,21 @@ const simplifyTopicFlow = ai.defineFlow(
     const { output: promptOutput } = await simplifyTopicPrompt(input);
 
     if (!promptOutput) {
-      throw new Error("Failed to generate topic summary and scenario.");
+      throw new Error("Failed to generate topic summary and diagram description.");
     }
 
-    const scenarioWithAnimations = await Promise.all(
-        promptOutput.animationScenario.map(async (scene) => {
-          try {
-            const designerPrompt = `You are a world-class SVG animator and illustrator. Your task is to generate a high-quality, professional, and visually compelling animated SVG suitable for an educational context.
-
-**Tone:** The style must be serious, informative, and professional. Avoid cartoonish, whimsical, or overly playful elements. The final output should look like a premium educational animation.
+    const designerPrompt = `You are a world-class diagram illustrator. Your task is to generate a high-quality, professional, and visually compelling SVG diagram suitable for an educational context.
 
 **Style requirements:**
-- **Animation:** The animation must be a smooth, continuous, and seamless loop.
-- **Self-Contained:** The SVG must be self-contained using CSS animations. No external scripts or assets are allowed.
+- **Clarity and Readability:** The diagram must be easy to read and understand. Use clear fonts and a logical layout.
+- **Self-Contained:** The SVG must be self-contained. No external scripts or assets.
 - **Aesthetics:** Use a modern, clean, flat-iconography style. The illustration must be detailed and sophisticated.
-- **NO Simple Shapes:** Avoid overly simplistic, abstract, or childish geometric shapes. The output must be a professional-grade illustration.
-- **NO Raster Images:** Do not use \`<image>\` tags or embed any raster graphics (like PNGs or JPEGs) within the SVG. The entire illustration must be composed of vector elements (\`<path>\`, \`<circle>\`, \`<rect>\`, etc.).
 - **Responsive:** The SVG must be responsive and scale correctly by using a 'viewBox' attribute.
 - **Background:** The background must be transparent.
-- **Colors:** Use a harmonious and professional color palette. You have creative freedom.
+- **Colors:** Use a harmonious and professional color palette.
 
 **Content Requirements:**
-- **Literal Representation:** The generated SVG must accurately and literally represent the objects, characters, and concepts described in the scene prompt. For example, if the prompt mentions a 'person', the SVG must clearly depict a human figure. If it mentions a 'house', it must look like a house. If it mentions a 'courthouse', it must resemble a courthouse building. The drawing must be a faithful visual translation of the text.
+- The generated SVG must accurately represent the concepts and relationships described in the diagram prompt. Use text labels, shapes (rectangles, circles, diamonds), and connecting arrows to build the diagram.
 
 **Output format:**
 - Only output the raw SVG code.
@@ -100,42 +76,24 @@ const simplifyTopicFlow = ai.defineFlow(
 - Do NOT include any other text, explanations, or markdown code fences like \`\`\`.
 
 **Task:**
-Create an animated SVG for the following scene:
-${scene.description}`;
+Create an SVG diagram for the following description:
+${promptOutput.diagramDescription}`;
 
-            const svgGenerationResponse = await ai.generate({ prompt: designerPrompt });
-            let svgCode = svgGenerationResponse.text;
+    const svgGenerationResponse = await ai.generate({ prompt: designerPrompt });
+    let svgCode = svgGenerationResponse.text;
 
-            const svgMatch = svgCode.match(/<svg[\s\S]*?<\/svg>/s);
-            if (svgMatch) {
-                svgCode = svgMatch[0];
-            } else {
-                svgCode = `<svg width="500" height="500" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" fill="hsl(var(--card-foreground))"><rect width="100%" height="100%" fill="hsl(var(--muted))" /><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="20px">Animasyon oluşturulamadı.</text></svg>`;
-            }
-    
-            const svgDataUri = 'data:image/svg+xml;base64,' + Buffer.from(svgCode).toString('base64');
-    
-            return {
-                scene: scene.scene,
-                description: scene.description,
-                imageDataUri: svgDataUri,
-            };
-          } catch (error) {
-            console.error(`Error generating animation for scene "${scene.scene}":`, error);
-            const fallbackSvg = `<svg width="500" height="500" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" fill="hsl(var(--card-foreground))"><rect width="100%" height="100%" fill="hsl(var(--muted))" /><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="20px">Animasyon hatası.</text></svg>`;
-            const svgDataUri = 'data:image/svg+xml;base64,' + Buffer.from(fallbackSvg).toString('base64');
-            return {
-              scene: scene.scene,
-              description: "Bu sahne için animasyon oluşturulurken bir hata oluştu.",
-              imageDataUri: svgDataUri,
-            };
-          }
-        })
-    );
+    const svgMatch = svgCode.match(/<svg[\s\S]*?<\/svg>/s);
+    if (svgMatch) {
+      svgCode = svgMatch[0];
+    } else {
+      svgCode = `<svg width="500" height="300" viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg" fill="hsl(var(--card-foreground))"><rect width="100%" height="100%" fill="hsl(var(--muted))" /><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="20px">Diyagram oluşturulamadı.</text></svg>`;
+    }
+
+    const diagramDataUri = 'data:image/svg+xml;base64,' + Buffer.from(svgCode).toString('base64');
 
     return {
       summary: promptOutput.summary,
-      animationScenario: scenarioWithAnimations,
+      diagramDataUri: diagramDataUri,
     };
   }
 );

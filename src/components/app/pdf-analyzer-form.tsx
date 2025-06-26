@@ -2,12 +2,11 @@
 
 import { useState, type ChangeEvent } from 'react';
 import { analyzePdfContent, type AnalyzePdfContentOutput } from '@/ai/flows/pdf-content-analyzer';
-import { FileUp, Loader2, Sparkles, UploadCloud, X, FileText, PlayCircle } from 'lucide-react';
+import { FileUp, Loader2, Sparkles, UploadCloud, X, FileText, Network } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 
 export function PdfAnalyzerForm() {
@@ -77,7 +76,7 @@ export function PdfAnalyzerForm() {
             PDF Analyzer
         </CardTitle>
         <CardDescription>
-          Upload a PDF document, and our AI will extract key concepts and generate a simplified summary for an animation.
+          Upload a PDF document, and our AI will extract key concepts and generate a simplified diagram.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -113,14 +112,14 @@ export function PdfAnalyzerForm() {
           ) : (
             <>
               <Sparkles className="mr-2 h-4 w-4" />
-              Generate Animation
+              Generate Diagram
             </>
           )}
         </Button>
         
         {loading && (
           <div className="mt-6 text-center text-muted-foreground">
-            <p>AI is reading your PDF and creating a storyboard... this might take a moment.</p>
+            <p>AI is reading your PDF and creating a diagram... this might take a moment.</p>
           </div>
         )}
 
@@ -129,36 +128,26 @@ export function PdfAnalyzerForm() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <PlayCircle />
-                    Animasyonlu Açıklama
+                    <Network />
+                    Açıklayıcı Diyagram
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Carousel className="w-full" opts={{ loop: true }}>
-                    <CarouselContent>
-                      {result.animationScenario.map((scene, index) => (
-                        <CarouselItem key={index}>
-                          <div className="p-1">
-                            <div className="w-full h-[480px] relative rounded-lg overflow-hidden bg-background shadow-inner">
-                              <img
-                                src={scene.imageDataUri}
-                                alt={scene.scene}
-                                className="w-full h-full object-contain"
-                                data-ai-hint="animation scene"
-                              />
-                            </div>
-                          </div>
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                    <CarouselPrevious className="hidden sm:flex" />
-                    <CarouselNext className="hidden sm:flex" />
-                  </Carousel>
+                  <div className="w-full p-1">
+                    <div className="w-full relative rounded-lg overflow-hidden bg-background shadow-inner border">
+                      <img
+                        src={result.diagramDataUri}
+                        alt="Açıklayıcı diyagram"
+                        className="w-full h-auto object-contain"
+                        data-ai-hint="diagram flowchart"
+                      />
+                    </div>
+                  </div>
                   
                   <div className="mt-6 pt-6 border-t">
                     <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
                       <FileText />
-                      Konu Açıklaması
+                      Konu Özeti
                     </h3>
                     <p className="text-sm text-muted-foreground">{result.summary}</p>
                   </div>
