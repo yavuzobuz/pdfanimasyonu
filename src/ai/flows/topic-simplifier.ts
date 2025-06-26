@@ -72,7 +72,11 @@ const simplifyTopicFlow = ai.defineFlow(
     const scenarioWithAnimations = await Promise.all(
         promptOutput.animationScenario.map(async (scene) => {
             const svgGenerationResponse = await ai.generate({
-                prompt: `You are an expert SVG animator. Create a self-contained, animated SVG using CSS animations. The SVG must not use any external scripts or assets. The animation should be a simple, continuous loop. Make it visually appealing, with a flat design style, and ensure it is responsive by using a viewBox attribute. The background should be transparent. The color palette should be calming and educational, using primary: #5DADE2, accent: #F5B041.
+                prompt: `You are an expert SVG animator. Create a self-contained, animated SVG using CSS animations. The SVG must not use any external scripts or assets. The animation should be a simple, continuous loop.
+
+Your task is to create a visually rich and detailed illustration that accurately represents the scene description. Avoid overly simplistic or abstract geometric shapes. Instead, focus on creating a recognizable and aesthetically pleasing depiction of the objects and actions in the scene.
+
+Make it visually appealing, with a flat design style, and ensure it is responsive by using a viewBox attribute. The background should be transparent. The color palette should be calming and educational, using primary: #5DADE2, accent: #F5B041.
                 
 Only output the raw SVG code, starting with <svg> and ending with </svg>. Do not include any other text, explanations, or markdown code fences.
     
