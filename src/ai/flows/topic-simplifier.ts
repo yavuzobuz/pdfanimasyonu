@@ -124,7 +124,13 @@ ${description}`;
 // EXPORTED FUNCTIONS
 export async function simplifyTopicAsAnimation(input: SimplifyTopicInput): Promise<SimplifyTopicAnimationOutput> {
   const { output: script } = await topicAnimationScriptPrompt(input);
-  if (!script) throw new Error("Failed to generate animation script.");
+  if (!script || !script.scenes || script.scenes.length === 0) {
+    console.error("Failed to generate animation script for topic.");
+    return {
+        summary: "Konu özeti oluşturulamadı. Lütfen farklı bir konuyla tekrar deneyin.",
+        scenes: []
+    };
+  }
 
   const scenePromises = script.scenes.map(async (sceneDescription) => {
     const svg = await generateSvg(sceneDescription);
@@ -138,9 +144,8 @@ export async function simplifyTopicAsAnimation(input: SimplifyTopicInput): Promi
 
 export async function simplifyTopicAsDiagram(input: SimplifyTopicInput): Promise<SimplifyTopicDiagramOutput> {
   const { output: diagramDescription } = await topicDiagramDescriptionPrompt(input);
-  if (!diagramDescription) throw new Error("Failed to generate diagram description.");
-  
-  const svgCode = await generateSvg(diagramDescription);
+  // If description is null/empty, generateSvg will safely return a fallback.
+  const svgCode = await generateSvg(diagramDescription || "");
 
   return { svg: svgCode };
 }

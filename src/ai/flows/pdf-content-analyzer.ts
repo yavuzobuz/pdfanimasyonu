@@ -126,7 +126,13 @@ ${description}`;
 // EXPORTED FUNCTIONS
 export async function analyzePdfContentAsAnimation(input: AnalyzePdfContentInput): Promise<AnalyzePdfContentAnimationOutput> {
   const { output: script } = await pdfAnimationScriptPrompt(input);
-  if (!script) throw new Error("Failed to generate animation script.");
+  if (!script || !script.scenes || script.scenes.length === 0) {
+    console.error("Failed to generate animation script from PDF.");
+    return {
+        summary: "PDF içeriğinden animasyon oluşturulamadı. Lütfen farklı bir dosya ile tekrar deneyin.",
+        scenes: []
+    };
+  }
 
   const scenePromises = script.scenes.map(async (sceneDescription) => {
     const svg = await generateSvg(sceneDescription);
@@ -140,9 +146,8 @@ export async function analyzePdfContentAsAnimation(input: AnalyzePdfContentInput
 
 export async function analyzePdfContentAsDiagram(input: AnalyzePdfContentInput): Promise<AnalyzePdfContentDiagramOutput> {
   const { output: diagramDescription } = await pdfDiagramDescriptionPrompt(input);
-  if (!diagramDescription) throw new Error("Failed to generate diagram description.");
-  
-  const svgCode = await generateSvg(diagramDescription);
+  // If description is null/empty, generateSvg will safely return a fallback.
+  const svgCode = await generateSvg(diagramDescription || "");
 
   return { svg: svgCode };
 }
