@@ -125,29 +125,43 @@ ${description}`;
 
 // EXPORTED FUNCTIONS
 export async function analyzePdfContentAsAnimation(input: AnalyzePdfContentInput): Promise<AnalyzePdfContentAnimationOutput> {
-  const { output: script } = await pdfAnimationScriptPrompt(input);
-  if (!script || !script.scenes || script.scenes.length === 0) {
-    console.error("Failed to generate animation script from PDF.");
+  try {
+    const { output: script } = await pdfAnimationScriptPrompt(input);
+    if (!script || !script.scenes || script.scenes.length === 0) {
+      console.error("Failed to generate animation script from PDF.");
+      return {
+          summary: "PDF içeriğinden animasyon oluşturulamadı. Lütfen farklı bir dosya ile tekrar deneyin.",
+          scenes: []
+      };
+    }
+
+    const scenePromises = script.scenes.map(async (sceneDescription) => {
+      const svg = await generateSvg(sceneDescription);
+      return { description: sceneDescription, svg: svg };
+    });
+
+    const scenes = await Promise.all(scenePromises);
+
+    return { summary: script.summary, scenes };
+  } catch (error) {
+    console.error("Crashed in analyzePdfContentAsAnimation flow:", error);
     return {
-        summary: "PDF içeriğinden animasyon oluşturulamadı. Lütfen farklı bir dosya ile tekrar deneyin.",
+        summary: "PDF analiz edilirken beklenmedik bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
         scenes: []
     };
   }
-
-  const scenePromises = script.scenes.map(async (sceneDescription) => {
-    const svg = await generateSvg(sceneDescription);
-    return { description: sceneDescription, svg: svg };
-  });
-
-  const scenes = await Promise.all(scenePromises);
-
-  return { summary: script.summary, scenes };
 }
 
 export async function analyzePdfContentAsDiagram(input: AnalyzePdfContentInput): Promise<AnalyzePdfContentDiagramOutput> {
-  const { output: diagramDescription } = await pdfDiagramDescriptionPrompt(input);
-  // If description is null/empty, generateSvg will safely return a fallback.
-  const svgCode = await generateSvg(diagramDescription || "");
+  try {
+    const { output: diagramDescription } = await pdfDiagramDescriptionPrompt(input);
+    // If description is null/empty, generateSvg will safely return a fallback.
+    const svgCode = await generateSvg(diagramDescription || "");
 
-  return { svg: svgCode };
+    return { svg: svgCode };
+  } catch(error) {
+    console.error("Crashed in analyzePdfContentAsDiagram flow:", error);
+    const fallbackSvg = await generateSvg("");
+    return { svg: fallbackSvg };
+  }
 }

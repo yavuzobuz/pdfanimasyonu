@@ -123,29 +123,43 @@ ${description}`;
 
 // EXPORTED FUNCTIONS
 export async function simplifyTopicAsAnimation(input: SimplifyTopicInput): Promise<SimplifyTopicAnimationOutput> {
-  const { output: script } = await topicAnimationScriptPrompt(input);
-  if (!script || !script.scenes || script.scenes.length === 0) {
-    console.error("Failed to generate animation script for topic.");
+  try {
+    const { output: script } = await topicAnimationScriptPrompt(input);
+    if (!script || !script.scenes || script.scenes.length === 0) {
+      console.error("Failed to generate animation script for topic.");
+      return {
+          summary: "Konu özeti oluşturulamadı. Lütfen farklı bir konuyla tekrar deneyin.",
+          scenes: []
+      };
+    }
+
+    const scenePromises = script.scenes.map(async (sceneDescription) => {
+      const svg = await generateSvg(sceneDescription);
+      return { description: sceneDescription, svg: svg };
+    });
+
+    const scenes = await Promise.all(scenePromises);
+
+    return { summary: script.summary, scenes };
+  } catch(error) {
+    console.error("Crashed in simplifyTopicAsAnimation flow:", error);
     return {
-        summary: "Konu özeti oluşturulamadı. Lütfen farklı bir konuyla tekrar deneyin.",
+        summary: "Konu basitleştirilirken beklenmedik bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
         scenes: []
     };
   }
-
-  const scenePromises = script.scenes.map(async (sceneDescription) => {
-    const svg = await generateSvg(sceneDescription);
-    return { description: sceneDescription, svg: svg };
-  });
-
-  const scenes = await Promise.all(scenePromises);
-
-  return { summary: script.summary, scenes };
 }
 
 export async function simplifyTopicAsDiagram(input: SimplifyTopicInput): Promise<SimplifyTopicDiagramOutput> {
-  const { output: diagramDescription } = await topicDiagramDescriptionPrompt(input);
-  // If description is null/empty, generateSvg will safely return a fallback.
-  const svgCode = await generateSvg(diagramDescription || "");
+  try {
+    const { output: diagramDescription } = await topicDiagramDescriptionPrompt(input);
+    // If description is null/empty, generateSvg will safely return a fallback.
+    const svgCode = await generateSvg(diagramDescription || "");
 
-  return { svg: svgCode };
+    return { svg: svgCode };
+  } catch(error) {
+    console.error("Crashed in simplifyTopicAsDiagram flow:", error);
+    const fallbackSvg = await generateSvg("");
+    return { svg: fallbackSvg };
+  }
 }
