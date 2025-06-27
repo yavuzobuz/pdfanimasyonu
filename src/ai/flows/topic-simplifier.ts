@@ -69,6 +69,7 @@ Topic: {{{topic}}}
 
 // SHARED SVG GENERATION LOGIC
 const generateSvg = async (description: string): Promise<string> => {
+  try {
     const designerPrompt = `You are an expert SVG illustrator who creates clear, professional, and visually appealing educational graphics. Your primary goal is to create an SVG that makes a concept easy to understand.
 
 **Critical Rule: Objects must be recognizable.** A person must look like a person, not a stick figure. A car must look like a car, not a box with circles. An office building should be detailed, not a simple rectangle. Your drawings must be literal and tangible. **AVOID abstract shapes, symbolic representations, and overly simplistic icons.** The user wants visuals that resemble real-world objects.
@@ -93,11 +94,14 @@ ${description}`;
 
     const svgGenerationResponse = await ai.generate({ prompt: designerPrompt, model: 'googleai/gemini-2.5-pro' });
     const svgCode = svgGenerationResponse.text;
+
+    if (typeof svgCode !== 'string') {
+      throw new Error('SVG generation returned a non-text response.');
+    }
     
     const svgMatch = svgCode.match(/<svg[\s\S]*?<\/svg>/s);
     if (!svgMatch) {
-      console.error("SVG generation failed: No SVG tag found in response for description:", description);
-      return `<svg width="500" height="300" viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg" fill="hsl(var(--card-foreground))"><rect width="100%" height="100%" fill="hsl(var(--muted))" /><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="20px">Görselleştirme başarısız.</text></svg>`;
+      throw new Error("SVG generation failed: No SVG tag found in response.");
     }
     
     const extractedSvg = svgMatch[0];
@@ -108,8 +112,12 @@ ${description}`;
         return extractedSvg;
     }
 
-    console.error("SVG generation failed: Validation checks failed for description:", description);
+    throw new Error("SVG generation failed: Validation checks failed.");
+
+  } catch (error) {
+    console.error(`SVG generation failed for description "${description}":`, error);
     return `<svg width="500" height="300" viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg" fill="hsl(var(--card-foreground))"><rect width="100%" height="100%" fill="hsl(var(--muted))" /><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="20px">Görselleştirme başarısız.</text></svg>`;
+  }
 };
 
 
