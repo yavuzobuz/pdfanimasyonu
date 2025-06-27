@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
-  simplifyTopicAsAnimation, 
-  simplifyTopicAsDiagram, 
-  type SimplifyTopicAnimationOutput, 
-  type SimplifyTopicDiagramOutput 
+  simplifyTopicGetScript,
+  simplifyTopicAsDiagram,
 } from '@/ai/flows/topic-simplifier';
-import { generateSceneImages, type GenerateSceneImagesOutput } from '@/ai/flows/image-generator';
+import { generateSvg } from '@/ai/actions/generate-svg';
+import { generateSceneImages } from '@/ai/flows/image-generator';
+import type { 
+  TopicAnimationScript, 
+  SimplifyTopicDiagramOutput,
+  GenerateSceneImagesOutput
+} from '@/ai/schemas';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Sparkles, Wand2, FileText, Network, Film, Image as ImageIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -45,9 +49,16 @@ const formSchema = z.object({
     }),
 });
 
+type Visual = {
+  description: string;
+  svg: string;
+};
+
 export function TopicSimplifierForm() {
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<SimplifyTopicAnimationOutput | null>(null);
+  const [loading, setLoading] = useState(false); // For script generation
+  const [script, setScript] = useState<TopicAnimationScript | null>(null);
+  const [visuals, setVisuals] = useState<Visual[]>([]);
+  const [visualsLoading, setVisualsLoading] = useState(false);
   const { toast } = useToast();
 
   const [diagramLoading, setDiagramLoading] = useState(false);
@@ -59,7 +70,6 @@ export function TopicSimplifierForm() {
   const [imageStyle, setImageStyle] = useState('Fotogerçekçi');
   const imageStyles = ['Fotogerçekçi', 'Dijital Sanat', 'Sulu Boya', 'Çizgi Roman', 'Düşük Poli'];
 
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -69,13 +79,14 @@ export function TopicSimplifierForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
-    setResult(null);
+    setScript(null);
+    setVisuals([]);
     setDiagramResult(null);
     setImageResults(null);
     setSubmittedTopic(values.topic);
     try {
-      const res = await simplifyTopicAsAnimation({ topic: values.topic });
-      setResult(res);
+      const res = await simplifyTopicGetScript({ topic: values.topic });
+      setScript(res);
     } catch (error) {
       console.error(error);
       toast({
@@ -88,6 +99,36 @@ export function TopicSimplifierForm() {
       setLoading(false);
     }
   }
+  
+  useEffect(() => {
+    if (!script?.scenes?.length) return;
+
+    const generateVisuals = async () => {
+      setVisualsLoading(true);
+      // Set initial placeholders with loading state
+      setVisuals(script.scenes.map(desc => ({ description: desc, svg: 'loading' })));
+
+      const generatedVisuals: Visual[] = [];
+      for (const sceneDescription of script.scenes) {
+        const svg = await generateSvg(sceneDescription);
+        const newVisual = { description: sceneDescription, svg };
+        generatedVisuals.push(newVisual);
+        
+        // Update state incrementally to show progress
+        setVisuals(currentVisuals => {
+            const updatedVisuals = [...currentVisuals];
+            const index = updatedVisuals.findIndex(v => v.description === sceneDescription);
+            if (index !== -1) {
+                updatedVisuals[index] = newVisual;
+            }
+            return updatedVisuals;
+        });
+      }
+      setVisualsLoading(false);
+    };
+
+    generateVisuals();
+  }, [script]);
 
   const handleGenerateDiagram = async () => {
     if (!submittedTopic) return;
@@ -109,11 +150,11 @@ export function TopicSimplifierForm() {
   };
 
   const handleGenerateImage = async () => {
-    if (!result?.scenes?.length) return;
+    if (!visuals?.length) return;
     setImageLoading(true);
     setImageResults(null);
     try {
-      const sceneDescriptions = result.scenes.map(s => s.description);
+      const sceneDescriptions = visuals.map(s => s.description);
       const res = await generateSceneImages({ scenes: sceneDescriptions, style: imageStyle });
       setImageResults(res);
     } catch (error) {
@@ -127,7 +168,6 @@ export function TopicSimplifierForm() {
       setImageLoading(false);
     }
   };
-
 
   return (
     <Card className="shadow-lg">
@@ -163,7 +203,7 @@ export function TopicSimplifierForm() {
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
+                  Generating Script...
                 </>
               ) : (
                 <>
@@ -177,11 +217,11 @@ export function TopicSimplifierForm() {
 
         {loading && (
           <div className="mt-6 text-center text-muted-foreground">
-            <p>AI is thinking and creating an animation... this may take a moment.</p>
+            <p>AI is thinking and creating a script... this may take a moment.</p>
           </div>
         )}
 
-        {result && (
+        {script && (
           <div className="mt-8 space-y-6">
             <Card>
               <CardHeader>
@@ -195,9 +235,15 @@ export function TopicSimplifierForm() {
                       <h3 className="text-lg font-semibold mb-4">Animasyon Sahneleri</h3>
                       <Carousel className="w-full max-w-xl mx-auto" opts={{ loop: true }}>
                           <CarouselContent>
-                              {result.scenes.map((scene, index) => (
+                              {visuals.map((scene, index) => (
                                   <CarouselItem key={index} className="flex flex-col items-center text-center">
-                                      <div className="p-1 border bg-muted rounded-lg shadow-inner w-full aspect-video flex items-center justify-center" dangerouslySetInnerHTML={{ __html: scene.svg }} />
+                                      <div className="p-1 border bg-muted rounded-lg shadow-inner w-full aspect-video flex items-center justify-center">
+                                        {scene.svg === 'loading' ? (
+                                           <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                                        ) : (
+                                          <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: scene.svg }} />
+                                        )}
+                                      </div>
                                       <p className="text-sm text-muted-foreground mt-2 h-10">{scene.description}</p>
                                   </CarouselItem>
                               ))}
@@ -212,7 +258,7 @@ export function TopicSimplifierForm() {
                       <FileText />
                       Konu Özeti
                     </h3>
-                    <p className="text-sm text-muted-foreground">{result.summary}</p>
+                    <p className="text-sm text-muted-foreground">{script.summary}</p>
                   </div>
 
                   <div className="pt-6 border-t">
@@ -248,7 +294,7 @@ export function TopicSimplifierForm() {
                                 </div>
                               ))}
                             </RadioGroup>
-                            <Button onClick={handleGenerateImage} disabled={imageLoading} className="mt-2">
+                            <Button onClick={handleGenerateImage} disabled={imageLoading || visualsLoading || visuals.length === 0} className="mt-2">
                                 <Sparkles className="mr-2 h-4 w-4" /> Görselleri Oluştur
                             </Button>
                         </div>
@@ -265,9 +311,9 @@ export function TopicSimplifierForm() {
                               {imageResults.images.map((imageDataUri, index) => (
                                   <CarouselItem key={index} className="flex flex-col items-center text-center">
                                       <div className="p-1 border bg-muted rounded-lg shadow-inner w-full">
-                                          <img src={imageDataUri} alt={result.scenes[index]?.description || `Scene ${index + 1}`} className="w-full h-auto object-contain aspect-video" data-ai-hint="scene illustration"/>
+                                          <img src={imageDataUri} alt={visuals[index]?.description || `Scene ${index + 1}`} className="w-full h-auto object-contain aspect-video" data-ai-hint="scene illustration"/>
                                       </div>
-                                      <p className="text-sm text-muted-foreground mt-2 h-10">{result.scenes[index]?.description}</p>
+                                      <p className="text-sm text-muted-foreground mt-2 h-10">{visuals[index]?.description}</p>
                                   </CarouselItem>
                               ))}
                           </CarouselContent>

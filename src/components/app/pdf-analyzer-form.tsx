@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, type ChangeEvent } from 'react';
-import { analyzePdfContentAsAnimation, analyzePdfContentAsDiagram, type AnalyzePdfContentAnimationOutput, type AnalyzePdfContentDiagramOutput } from '@/ai/flows/pdf-content-analyzer';
-import { generateSceneImages, type GenerateSceneImagesOutput } from '@/ai/flows/image-generator';
+import { useState, type ChangeEvent, useEffect } from 'react';
+import { analyzePdfGetScript, analyzePdfContentAsDiagram } from '@/ai/flows/pdf-content-analyzer';
+import { generateSvg } from '@/ai/actions/generate-svg';
+import { generateSceneImages } from '@/ai/flows/image-generator';
+import type { PdfAnimationScript, AnalyzePdfContentDiagramOutput, GenerateSceneImagesOutput } from '@/ai/schemas';
 import { FileUp, Loader2, Sparkles, UploadCloud, X, FileText, Network, Film, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,10 +14,17 @@ import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 
+type Visual = {
+  description: string;
+  svg: string;
+};
 
 export function PdfAnalyzerForm() {
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<AnalyzePdfContentAnimationOutput | null>(null);
+  const [script, setScript] = useState<PdfAnimationScript | null>(null);
+  const [visuals, setVisuals] = useState<Visual[]>([]);
+  const [visualsLoading, setVisualsLoading] = useState(false);
+  
   const [file, setFile] = useState<File | null>(null);
   const [fileDataUri, setFileDataUri] = useState<string | null>(null);
   const { toast } = useToast();
@@ -52,7 +61,8 @@ export function PdfAnalyzerForm() {
   const removeFile = () => {
     setFile(null);
     setFileDataUri(null);
-    setResult(null);
+    setScript(null);
+    setVisuals([]);
     setDiagramResult(null);
     setImageResults(null);
   };
@@ -67,12 +77,13 @@ export function PdfAnalyzerForm() {
       return;
     }
     setLoading(true);
-    setResult(null);
+    setScript(null);
+    setVisuals([]);
     setDiagramResult(null);
     setImageResults(null);
     try {
-      const res = await analyzePdfContentAsAnimation({ pdfDataUri: fileDataUri });
-      setResult(res);
+      const res = await analyzePdfGetScript({ pdfDataUri: fileDataUri });
+      setScript(res);
     } catch (error) {
       console.error(error);
       toast({
@@ -84,6 +95,36 @@ export function PdfAnalyzerForm() {
       setLoading(false);
     }
   };
+  
+  useEffect(() => {
+    if (!script?.scenes?.length) return;
+
+    const generateVisuals = async () => {
+      setVisualsLoading(true);
+      // Set initial placeholders with loading state
+      setVisuals(script.scenes.map(desc => ({ description: desc, svg: 'loading' })));
+
+      const generatedVisuals: Visual[] = [];
+      for (const sceneDescription of script.scenes) {
+        const svg = await generateSvg(sceneDescription);
+        const newVisual = { description: sceneDescription, svg };
+        generatedVisuals.push(newVisual);
+        
+        // Update state incrementally to show progress
+        setVisuals(currentVisuals => {
+            const updatedVisuals = [...currentVisuals];
+            const index = updatedVisuals.findIndex(v => v.description === sceneDescription);
+            if (index !== -1) {
+                updatedVisuals[index] = newVisual;
+            }
+            return updatedVisuals;
+        });
+      }
+      setVisualsLoading(false);
+    };
+
+    generateVisuals();
+  }, [script]);
 
   const handleGenerateDiagram = async () => {
     if (!fileDataUri) return;
@@ -105,11 +146,11 @@ export function PdfAnalyzerForm() {
   };
 
   const handleGenerateImage = async () => {
-    if (!result?.scenes?.length) return;
+    if (!visuals?.length) return;
     setImageLoading(true);
     setImageResults(null);
     try {
-      const sceneDescriptions = result.scenes.map(s => s.description);
+      const sceneDescriptions = visuals.map(s => s.description);
       const res = await generateSceneImages({ scenes: sceneDescriptions, style: imageStyle });
       setImageResults(res);
     } catch (error) {
@@ -176,11 +217,11 @@ export function PdfAnalyzerForm() {
         
         {loading && (
           <div className="mt-6 text-center text-muted-foreground">
-            <p>AI is reading your PDF and creating an animation... this might take a moment.</p>
+            <p>AI is reading your PDF and creating a script... this might take a moment.</p>
           </div>
         )}
 
-        {result && (
+        {script && (
             <div className="mt-8 space-y-6">
               <Card>
                 <CardHeader>
@@ -194,9 +235,15 @@ export function PdfAnalyzerForm() {
                       <h3 className="text-lg font-semibold mb-4">Animasyon Sahneleri</h3>
                       <Carousel className="w-full max-w-xl mx-auto" opts={{ loop: true }}>
                           <CarouselContent>
-                              {result.scenes.map((scene, index) => (
+                              {visuals.map((scene, index) => (
                                   <CarouselItem key={index} className="flex flex-col items-center text-center">
-                                      <div className="p-1 border bg-muted rounded-lg shadow-inner w-full aspect-video flex items-center justify-center" dangerouslySetInnerHTML={{ __html: scene.svg }} />
+                                      <div className="p-1 border bg-muted rounded-lg shadow-inner w-full aspect-video flex items-center justify-center">
+                                        {scene.svg === 'loading' ? (
+                                           <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                                        ) : (
+                                          <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: scene.svg }} />
+                                        )}
+                                      </div>
                                       <p className="text-sm text-muted-foreground mt-2 h-10">{scene.description}</p>
                                   </CarouselItem>
                               ))}
@@ -210,7 +257,7 @@ export function PdfAnalyzerForm() {
                       <FileText />
                       Konu Özeti
                     </h3>
-                    <p className="text-sm text-muted-foreground">{result.summary}</p>
+                    <p className="text-sm text-muted-foreground">{script.summary}</p>
                   </div>
                    <div className="pt-6 border-t">
                     <h3 className="text-lg font-semibold mb-2 flex items-center gap-2"><Network /> Diyagram Şeması</h3>
@@ -245,7 +292,7 @@ export function PdfAnalyzerForm() {
                                 </div>
                               ))}
                             </RadioGroup>
-                            <Button onClick={handleGenerateImage} disabled={imageLoading} className="mt-2">
+                            <Button onClick={handleGenerateImage} disabled={imageLoading || visualsLoading || visuals.length === 0} className="mt-2">
                                 <Sparkles className="mr-2 h-4 w-4" /> Görselleri Oluştur
                             </Button>
                         </div>
@@ -262,9 +309,9 @@ export function PdfAnalyzerForm() {
                               {imageResults.images.map((imageDataUri, index) => (
                                   <CarouselItem key={index} className="flex flex-col items-center text-center">
                                       <div className="p-1 border bg-muted rounded-lg shadow-inner w-full">
-                                          <img src={imageDataUri} alt={result.scenes[index]?.description || `Scene ${index + 1}`} className="w-full h-auto object-contain aspect-video" data-ai-hint="scene illustration"/>
+                                          <img src={imageDataUri} alt={visuals[index]?.description || `Scene ${index + 1}`} className="w-full h-auto object-contain aspect-video" data-ai-hint="scene illustration"/>
                                       </div>
-                                      <p className="text-sm text-muted-foreground mt-2 h-10">{result.scenes[index]?.description}</p>
+                                      <p className="text-sm text-muted-foreground mt-2 h-10">{visuals[index]?.description}</p>
                                   </CarouselItem>
                               ))}
                           </CarouselContent>

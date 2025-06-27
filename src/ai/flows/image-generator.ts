@@ -3,23 +3,15 @@
  * @fileOverview Generates illustrative images from a series of text prompts (scenes).
  *
  * - generateSceneImages - A function that handles image generation for multiple scenes.
- * - GenerateSceneImagesInput - The input type for the function.
- * - GenerateSceneImagesOutput - The return type for the function.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-
-const GenerateSceneImagesInputSchema = z.object({
-  scenes: z.array(z.string()).describe('An array of scene descriptions for which to generate images.'),
-  style: z.string().optional().default('Fotogerçekçi').describe('The visual style for the images.'),
-});
-export type GenerateSceneImagesInput = z.infer<typeof GenerateSceneImagesInputSchema>;
-
-const GenerateSceneImagesOutputSchema = z.object({
-  images: z.array(z.string().describe('The generated images as data URIs.')),
-});
-export type GenerateSceneImagesOutput = z.infer<typeof GenerateSceneImagesOutputSchema>;
+import {
+  GenerateSceneImagesInputSchema,
+  GenerateSceneImagesOutputSchema,
+  type GenerateSceneImagesInput,
+  type GenerateSceneImagesOutput
+} from '@/ai/schemas';
 
 const generateSceneImagesFlow = ai.defineFlow(
   {
