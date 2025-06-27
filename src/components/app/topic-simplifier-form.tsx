@@ -197,9 +197,7 @@ export function TopicSimplifierForm() {
                           <CarouselContent>
                               {result.scenes.map((scene, index) => (
                                   <CarouselItem key={index} className="flex flex-col items-center text-center">
-                                      <div className="p-1 border bg-muted rounded-lg shadow-inner w-full">
-                                          <img src={scene.svgDataUri} alt={scene.description} className="w-full h-auto object-contain aspect-video" data-ai-hint="animation scene" />
-                                      </div>
+                                      <div className="p-1 border bg-muted rounded-lg shadow-inner w-full aspect-video flex items-center justify-center" dangerouslySetInnerHTML={{ __html: scene.svg }} />
                                       <p className="text-sm text-muted-foreground mt-2 h-10">{scene.description}</p>
                                   </CarouselItem>
                               ))}
@@ -234,9 +232,7 @@ export function TopicSimplifierForm() {
                         </div>
                     )}
                     {diagramResult && (
-                        <div className="w-full p-1 border bg-background rounded-lg shadow-inner">
-                            <img src={diagramResult.diagramDataUri} alt="Diyagram Şeması" className="w-full h-auto object-contain" data-ai-hint="diagram flowchart"/>
-                        </div>
+                        <div className="w-full p-1 border bg-background rounded-lg shadow-inner" dangerouslySetInnerHTML={{ __html: diagramResult.svg }} />
                     )}
                   </div>
                   <div className="pt-6 border-t">
