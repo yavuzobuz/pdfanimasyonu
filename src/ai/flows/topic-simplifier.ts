@@ -91,7 +91,7 @@ const generateSvg = async (description: string): Promise<string> => {
 **Now, create an SVG for the following scene:**
 ${description}`;
 
-    const svgGenerationResponse = await ai.generate({ prompt: designerPrompt, model: 'googleai/gemini-2.5-pro-preview' });
+    const svgGenerationResponse = await ai.generate({ prompt: designerPrompt, model: 'googleai/gemini-2.5-pro' });
     const svgCode = svgGenerationResponse.text;
     
     const svgMatch = svgCode.match(/<svg[\s\S]*?<\/svg>/s);
