@@ -29,7 +29,7 @@ export async function generateSvg(description: string): Promise<string> {
 **Now, create an SVG for the following scene:**
 ${description}`;
 
-    const svgGenerationResponse = await ai.generate({ prompt: designerPrompt, model: 'googleai/gemini-2.5-pro' });
+    const svgGenerationResponse = await ai.generate({ prompt: designerPrompt, model: 'googleai/gemini-1.5-flash-latest' });
     const svgCode = svgGenerationResponse.text;
     
     if (typeof svgCode !== 'string') {
